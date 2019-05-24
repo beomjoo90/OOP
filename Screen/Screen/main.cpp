@@ -17,27 +17,24 @@ class Screen {
 	char* screen;
 
 public:
-	Screen(int sz) : size(sz), screen(new char[sz + 1]) 
+	Screen(int sz) : size(sz), screen(new char[sz + 1])
+	{}
+	~Screen()
 	{
-		printf("Screen constructor\n");
-	}
-	~Screen() 
-	{ 
-		printf("Screen destructor\n");
 		if (screen) {
 			delete[] screen;
 			screen = nullptr;
 		}
 	}
 
-	void draw(int pos, const char* face) 
+	void draw(int pos, const char* face)
 	{
 		if (face == nullptr) return;
 		if (pos < 0 || pos >= size) return;
 		strncpy(&screen[pos], face, strlen(face));
 	}
 
-	void render() 
+	void render()
 	{
 		printf("%s\r", screen);
 	}
@@ -58,51 +55,55 @@ public:
 class GameObject {
 	int pos;
 	char face[20];
-	Screen* screen;
+	Screen& screen;
 
 public:
-	GameObject(int pos, const char* face, Screen* screen)
+	GameObject(int pos, const char* face, Screen& screen)
 		: pos(pos), screen(screen)
 	{
-		printf("GameObject constructor\n");
 		strcpy(this->face, face);
 	}
 
-	~GameObject()
-	{
-		printf("GameObject destructor\n");
-	}
+	virtual ~GameObject()
+	{}
 
-	
 	int getPosition()
 	{
 		return pos;
 	}
+
 	void setPosition(int pos)
 	{
 		this->pos = pos;
 	}
-	void draw()
+
+	virtual void process_input(int input, GameObject* objects[], int maxObjects)
 	{
-		screen->draw(pos, face);
+		if (!objects || maxObjects == 0) return;
 	}
+
+	virtual void draw()
+	{
+		screen.draw(pos, face);
+	}
+
+	virtual void update(GameObject* objects[], int maxObjects)
+	{
+		if (!objects || maxObjects == 0) return;
+	}
+
 };
 
 class Player : public GameObject {
-	
+
 public:
-	Player(int pos, const char* face, Screen* screen) 
+	Player(int pos, const char* face, Screen& screen)
 		: GameObject(pos, face, screen)
-	{	
-		printf("Player constructor\n");
-	}
+	{}
 
 	~Player()
-	{
-		printf("Player destructor\n");
-	}
+	{}
 
-	
 	void moveLeft()
 	{
 		setPosition(getPosition() - 1);
@@ -113,34 +114,32 @@ public:
 		setPosition(getPosition() + 1);
 	}
 
-	void update()
+	void process_input(int input, GameObject* objects[], int maxObjects)
 	{
-
+		if (input == 'a') moveLeft();
+		else if (input == 'd') moveRight();
 	}
 
 };
 
 class Enemy : public GameObject {
-	
+
 public:
-	Enemy(int pos, const char* face, Screen* screen) 
+	Enemy(int pos, const char* face, Screen& screen)
 		: GameObject(pos, face, screen)
-	{
-		printf("Enemy constructor\n");
-	}
+	{}
 
 	~Enemy()
-	{
-		printf("Enemy destructor\n");
-	}
+	{}
 
 	void moveRandom()
 	{
-		setPosition( getPosition() + rand() % 3 - 1);
+		setPosition(getPosition() + rand() % 3 - 1);
 	}
 
-	void update()
+	void update(GameObject* objects[], int maxObjects)
 	{
+		if (!objects || maxObjects == 0) return;
 		moveRandom();
 	}
 };
@@ -148,16 +147,19 @@ public:
 class Bullet : public GameObject {
 	bool isFiring;
 
+	void fire(int player_pos)
+	{
+		isFiring = true;
+		setPosition(player_pos);
+	}
+
 public:
-	Bullet(int pos, const char* face, Screen* screen) 
+	Bullet(int pos, const char* face, Screen& screen)
 		: GameObject(pos, face, screen), isFiring(false)
-	{
-		printf("Bullet constructor\n");
-	}
+	{}
+
 	~Bullet()
-	{
-		printf("Bullet destructor\n");
-	}
+	{}
 
 	void moveLeft()
 	{
@@ -175,14 +177,35 @@ public:
 		GameObject::draw();
 	}
 
-	void fire(int player_pos)
+	void process_input(int input, GameObject* objects[], int maxObjects)
 	{
-		isFiring = true;
-		setPosition(player_pos);
+		if (input != ' ') return;
+
+		for (int i = 0; i < maxObjects; i++)
+		{
+			GameObject* obj = objects[i];
+			if (!obj) continue;
+			Player* player = dynamic_cast<Player*>(obj);
+			if (!player) continue;
+			fire(player->getPosition());
+		}
 	}
 
-	void update(int enemy_pos)
+	void update(GameObject* objects[], int maxObjects)
 	{
+		if (!objects || maxObjects == 0) return;
+
+		int enemy_pos = -1; // not found any enemy object
+		for (int i = 0; i < maxObjects; i++)
+		{
+			GameObject* obj = objects[i];
+			if (!obj) continue;
+			Enemy* enemy = dynamic_cast<Enemy*>(obj);
+			if (!enemy) continue;
+			enemy_pos = enemy->getPosition();
+		}
+		if (enemy_pos == -1) return; // not found any enemy
+
 		if (isFiring == false) return;
 		int pos = getPosition();
 		if (pos < enemy_pos) {
@@ -198,15 +221,22 @@ public:
 	}
 };
 
-#define NORMAL_PLAY 0
+#define NORMAL_PLAY 1
 
 #if NORMAL_PLAY
 int main()
 {
 	Screen screen{ 80 };
-	Player player = { 30, "(^_^)", &screen };
-	Enemy enemy{ 60, "(*--*)", &screen };
-	Bullet bullet( -1, "+", &screen);
+	Player player = { 30, "(^_^)", screen };
+	Enemy enemy{ 60, "(*--*)", screen };
+	Bullet bullet(-1, "+", screen);
+	const int maxGameObjects = 10;
+	GameObject* gameObjects[maxGameObjects];
+	for (int i = 0; i < maxGameObjects; i++)
+		gameObjects[i] = nullptr;
+	gameObjects[0] = &player; //upcast
+	gameObjects[1] = &enemy;
+	gameObjects[2] = &bullet;
 
 	while (true)
 	{
@@ -215,26 +245,27 @@ int main()
 		if (_kbhit())
 		{
 			int c = _getch();
-			switch (c) {
-			case 'a':
-				player.moveLeft();
-				break;
-			case 'd':
-				player.moveRight();
-				break;
-			case ' ':
-				bullet.fire(player.getPosition());
-				break;
+			for (int i = 0; i < maxGameObjects; i++)
+			{
+				GameObject* obj = gameObjects[i];
+				if (!obj) continue;
+				obj->process_input(c, gameObjects, maxGameObjects);
 			}
 		}
-		player.draw();
-		enemy.draw();
-		bullet.draw();
+		for (int i = 0; i < maxGameObjects; i++)
+		{
+			GameObject* obj = gameObjects[i];
+			if (!obj) continue;
+			obj->draw();
+		}
 
-		player.update();
-		enemy.update();
-		bullet.update(enemy.getPosition());
-		
+		for (int i = 0; i < maxGameObjects; i++)
+		{
+			GameObject* obj = gameObjects[i];
+			if (!obj) continue;
+			obj->update(gameObjects, maxGameObjects);
+		}
+
 		screen.render();
 		Sleep(66);
 	}
@@ -253,7 +284,7 @@ void test()
 	Enemy enemy{ 60, "(*--*)", &screen };
 	Bullet bullet(-1, "+", &screen);
 	*/
-	
+
 }
 
 int main()

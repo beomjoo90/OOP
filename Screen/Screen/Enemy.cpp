@@ -3,7 +3,7 @@
 #include "Enemy.h"
 
 
-Enemy::Enemy(int pos, const char* face, Screen& screen) : GameObject(pos, face, screen)
+Enemy::Enemy(int pos, const char* face) : GameObject(pos, face)
 {}
 
 Enemy::~Enemy()

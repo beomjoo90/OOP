@@ -2,6 +2,15 @@
 #include <iostream>
 #include "Screen.h"
 
+Screen* Screen::instance = nullptr;
+
+Screen& Screen::getInstance()
+{
+	if (!instance) {
+		instance = new Screen{ 80 };
+	}
+	return *instance;
+}
 
 Screen::Screen(int sz) : size(sz), screen(new char[sz + 1])
 {
@@ -12,6 +21,11 @@ Screen::~Screen()
 	if (screen) {
 		delete[] screen;
 		screen = nullptr;
+	}
+	if (instance != nullptr)
+	{
+		delete instance;
+		instance = nullptr;
 	}
 }
 

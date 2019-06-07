@@ -13,7 +13,7 @@ class Bullet :
 	}
 
 public:
-	Bullet(int pos, const char* face, Screen& screen);
+	Bullet(int pos, const char* face);
 	virtual ~Bullet();
 
 	void moveLeft();

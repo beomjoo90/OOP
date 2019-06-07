@@ -3,8 +3,8 @@
 #include "GameObject.h"
 
 
-GameObject::GameObject(int pos, const char* face, Screen& screen)
-	: pos(pos), screen(screen)
+GameObject::GameObject(int pos, const char* face)
+	: pos(pos), screen(Screen::getInstance())
 {
 	strcpy(this->face, face);
 }

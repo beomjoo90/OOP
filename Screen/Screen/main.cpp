@@ -13,10 +13,9 @@ using namespace std;
 
 int main()
 {
-	Screen screen{ 80 };
-	Player player = { 30, "(^_^)", screen };
-	Enemy enemy{ 60, "(*--*)", screen };
-	Bullet bullet(-1, "+", screen);
+	Player player = { 30, "(^_^)" };
+	Enemy enemy{ 60, "(*--*)" };
+	Bullet bullet(-1, "+");
 	const int maxGameObjects = 10;
 	GameObject* gameObjects[maxGameObjects];
 	for (int i = 0; i < maxGameObjects; i++)
@@ -27,7 +26,7 @@ int main()
 
 	while (true)
 	{
-		screen.clear();
+		Screen::getInstance().clear();
 
 		if (_kbhit())
 		{
@@ -53,7 +52,7 @@ int main()
 			obj->update(gameObjects, maxGameObjects);
 		}
 
-		screen.render();
+		Screen::getInstance().render();
 		Sleep(66);
 	}
 

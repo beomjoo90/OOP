@@ -4,7 +4,7 @@
 #include "Player.h"
 #include "Enemy.h"
 
-Bullet::Bullet(int pos, const char* face, Screen& screen) :GameObject(pos, face, screen), isFiring(false)
+Bullet::Bullet(int pos, const char* face) :GameObject(pos, face), isFiring(false)
 {
 }
 

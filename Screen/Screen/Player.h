@@ -4,7 +4,7 @@ class Player :
 	public GameObject
 {
 public:
-	Player(int pos, const char* face, Screen& screen);
+	Player(int pos, const char* face);
 	virtual ~Player();
 
 	void moveLeft();

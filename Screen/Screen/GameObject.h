@@ -7,7 +7,7 @@ class GameObject
 	char face[20];
 	Screen& screen;
 public:
-	GameObject(int pos, const char* face, Screen& screen);
+	GameObject(int pos, const char* face);
 	
 	virtual ~GameObject();
 

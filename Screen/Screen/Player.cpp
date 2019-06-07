@@ -2,7 +2,7 @@
 #include <iostream>
 #include "Player.h"
 
-Player::Player(int pos, const char* face, Screen& screen) : GameObject(pos, face, screen)
+Player::Player(int pos, const char* face) : GameObject(pos, face)
 {
 }
 

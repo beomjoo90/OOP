@@ -8,12 +8,31 @@
 #include "Player.h"
 #include "Enemy.h"
 #include "Bullet.h"
+#include "Integer.h"
+
 
 using namespace std;
 
 int main()
 {
-	Player player = { 30, "(^_^)" };
+	Integer i = 10;
+	Integer j = 20;
+	Integer k( 0 );
+	Integer m(-1);
+	Integer l(-10);
+
+	l = k = i + j + m;
+	//l.operator=(k.operator=(  operator+(operator+(i, j), m) ));
+
+	l.print(); // 29
+
+	Integer::printStat();
+
+
+
+
+
+/*	Player player = { 30, "(^_^)" };
 	Enemy enemy{ 60, "(*--*)" };
 	Bullet bullet(-1, "+");
 	const int maxGameObjects = 10;
@@ -55,6 +74,6 @@ int main()
 		Screen::getInstance().render();
 		Sleep(66);
 	}
-
+	*/
 	return 0;
 }

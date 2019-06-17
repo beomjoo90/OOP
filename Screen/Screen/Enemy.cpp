@@ -14,8 +14,11 @@ void Enemy::moveRandom()
 	setPosition(getPosition() + rand() % 3 - 1);
 }
 
-void Enemy::update(GameObject* objects[], int maxObjects)
+void Enemy::update()
+{	
+}
+
+void Enemy::getHit()
 {
-	if (!objects || maxObjects == 0) return;
-	moveRandom();
+	// we didn't implement anything.
 }

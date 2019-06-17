@@ -5,21 +5,16 @@ class Bullet :
 	public GameObject
 {
 	bool isFiring;
-
-	void fire(int player_pos)
-	{
-		isFiring = true;
-		setPosition(player_pos);
-	}
+	Direction direction;
 
 public:
-	Bullet(int pos, const char* face);
+	Bullet(int pos, const char* face, Direction direction);
 	virtual ~Bullet();
 
 	void moveLeft();
 	void moveRight();
 	void draw();
-	void process_input(int input, GameObject* objects[], int maxObjects);
-	void update(GameObject* objects[], int maxObjects);
+	void process_input(int input);
+	void update();
 };
 

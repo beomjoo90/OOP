@@ -3,8 +3,9 @@
 #include "GameObject.h"
 
 
+
 GameObject::GameObject(int pos, const char* face)
-	: pos(pos), screen(Screen::getInstance())
+	: pos(pos), screen(Screen::getInstance()), objects(GameObjects::getInstance())
 {
 	strcpy(this->face, face);
 }
@@ -21,9 +22,8 @@ void GameObject::setPosition(int pos)
 	this->pos = pos;
 }
 
-void GameObject::process_input(int input, GameObject* objects[], int maxObjects)
-{
-	if (!objects || maxObjects == 0) return;
+void GameObject::process_input(int input)
+{	
 }
 
 void GameObject::draw()
@@ -31,8 +31,22 @@ void GameObject::draw()
 	screen.draw(pos, face);
 }
 
-void GameObject::update(GameObject* objects[], int maxObjects)
+void GameObject::update()
 {
-	if (!objects || maxObjects == 0) return;
+}
+
+void GameObject::addToList(GameObject* obj)
+{
+	objects.add(obj);
+}
+
+void GameObject::removeFromList(GameObject* obj)
+{
+	objects.remove(obj);
+}
+
+GameObjects& GameObject::getList()
+{
+	return objects;
 }
 

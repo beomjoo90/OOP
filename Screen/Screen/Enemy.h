@@ -7,6 +7,7 @@ public:
 	Enemy(int pos, const char* face);
 	virtual ~Enemy();
 	void moveRandom();
-	void update(GameObject* objects[], int maxObjects);
+	void update();
+	void getHit();
 };
 

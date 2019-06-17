@@ -11,6 +11,6 @@ public:
 
 	void moveRight();
 
-	void process_input(int input, GameObject* objects[], int maxObjects);
+	void process_input(int input);
 };
 

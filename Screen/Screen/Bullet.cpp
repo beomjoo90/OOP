@@ -4,7 +4,7 @@
 #include "Player.h"
 #include "Enemy.h"
 
-Bullet::Bullet(int pos, const char* face) :GameObject(pos, face), isFiring(false)
+Bullet::Bullet(int pos, const char* face, Direction direction=Direction::Left) : GameObject(pos, face), isFiring(true), direction(direction)
 {
 }
 
@@ -26,45 +26,26 @@ void Bullet::draw()
 	GameObject::draw();
 }
 
-void Bullet::process_input(int input, GameObject* objects[], int maxObjects)
+void Bullet::process_input(int input)
 {
 	if (input != ' ') return;
-
-	for (int i = 0; i < maxObjects; i++)
-	{
-		GameObject* obj = objects[i];
-		if (!obj) continue;
-		Player* player = dynamic_cast<Player*>(obj);
-		if (!player) continue;
-		fire(player->getPosition());
-	}
 }
 
-void Bullet::update(GameObject* objects[], int maxObjects)
+void Bullet::update()
 {
-	if (!objects || maxObjects == 0) return;
-
-	int enemy_pos = -1; // not found any enemy object
-	for (int i = 0; i < maxObjects; i++)
-	{
-		GameObject* obj = objects[i];
-		if (!obj) continue;
-		Enemy* enemy = dynamic_cast<Enemy*>(obj);
-		if (!enemy) continue;
-		enemy_pos = enemy->getPosition();
+	if (isFiring == false) {
+		getList().remove(this);
+		return;
 	}
-	if (enemy_pos == -1) return; // not found any enemy
+	GameObject* enemy = getList().getEnemy();
+	if (!enemy) return;
 
-	if (isFiring == false) return;
 	int pos = getPosition();
-	if (pos < enemy_pos) {
-		pos = pos + 1;
-	}
-	else if (pos > enemy_pos) {
-		pos = pos - 1;
-	}
-	else {
+	if (pos == enemy->getPosition()) {
+		dynamic_cast<Enemy *>(enemy)->getHit();
 		isFiring = false;
+		return;
 	}
-	setPosition(pos);
+	if (direction == Direction::Left) moveLeft();
+	else moveRight();
 }

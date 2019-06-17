@@ -9,12 +9,14 @@
 #include "Enemy.h"
 #include "Bullet.h"
 #include "Integer.h"
+#include "GameObjects.h"
 
 
 using namespace std;
 
 int main()
 {
+#if 0
 	Integer i = 10;
 	Integer j = 20;
 	Integer k( 0 );
@@ -27,53 +29,21 @@ int main()
 	l.print(); // 29
 
 	Integer::printStat();
+#endif
+	GameObjects& objects = GameObjects::getInstance();
 
 
-
-
-
-/*	Player player = { 30, "(^_^)" };
-	Enemy enemy{ 60, "(*--*)" };
-	Bullet bullet(-1, "+");
-	const int maxGameObjects = 10;
-	GameObject* gameObjects[maxGameObjects];
-	for (int i = 0; i < maxGameObjects; i++)
-		gameObjects[i] = nullptr;
-	gameObjects[0] = &player; //upcast
-	gameObjects[1] = &enemy;
-	gameObjects[2] = &bullet;
+	objects.add(new Player{ 30, "(^_^)" });
+	objects.add(new Enemy{ 60, "(*--*)" });
 
 	while (true)
 	{
 		Screen::getInstance().clear();
 
-		if (_kbhit())
-		{
-			int c = _getch();
-			for (int i = 0; i < maxGameObjects; i++)
-			{
-				GameObject* obj = gameObjects[i];
-				if (!obj) continue;
-				obj->process_input(c, gameObjects, maxGameObjects);
-			}
-		}
-		for (int i = 0; i < maxGameObjects; i++)
-		{
-			GameObject* obj = gameObjects[i];
-			if (!obj) continue;
-			obj->draw();
-		}
-
-		for (int i = 0; i < maxGameObjects; i++)
-		{
-			GameObject* obj = gameObjects[i];
-			if (!obj) continue;
-			obj->update(gameObjects, maxGameObjects);
-		}
+		objects.update();
 
 		Screen::getInstance().render();
 		Sleep(66);
 	}
-	*/
 	return 0;
 }

@@ -13,6 +13,7 @@ public:
 	GameObjects(int capacity);
 	~GameObjects();
 
+	int find(GameObject* obj);
 	void add(GameObject* obj);
 	void remove(GameObject* obj);
 	void update();

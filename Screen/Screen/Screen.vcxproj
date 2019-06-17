@@ -152,6 +152,7 @@
     <ClCompile Include="GameObjects.cpp" />
     <ClCompile Include="Integer.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="MyString.cpp" />
     <ClCompile Include="Player.cpp" />
     <ClCompile Include="Screen.cpp" />
   </ItemGroup>
@@ -161,6 +162,7 @@
     <ClInclude Include="GameObject.h" />
     <ClInclude Include="GameObjects.h" />
     <ClInclude Include="Integer.h" />
+    <ClInclude Include="MyString.h" />
     <ClInclude Include="Player.h" />
     <ClInclude Include="Screen.h" />
   </ItemGroup>

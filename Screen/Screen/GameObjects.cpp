@@ -37,27 +37,30 @@ GameObjects::~GameObjects()
 	capacity = 0;
 }
 
-void GameObjects::add(GameObject* obj)
+int GameObjects::find(GameObject* obj)
 {
-	for (int i = 0; i < capacity; i++)
-	{
-		if (!objects[i]) {
-			objects[i] = obj;
-			return;
-		}
+	for (int i = 0; i < capacity; i++) {
+		if (objects[i] == obj) return i;
 	}
+	return -1;
+}
+
+void GameObjects::add(GameObject*	obj)
+{
+	int index = find(obj);
+	if (index >= 0) return;
+	index = find(nullptr);
+	if (index == -1) return;
+	objects[index] = obj;
 }
 
 void GameObjects::remove(GameObject* obj)
 {
-	for (int i = 0; i < capacity; i++) {
-		if (objects[i] == obj) {
-			objects[i] = nullptr;
-			if (obj != nullptr)	{
-				delete obj;
-			}
-			return;
-		}
+	int index = find(obj);
+	if (index == -1) return;
+	objects[index] = nullptr;
+	if (obj) {
+		delete obj;
 	}
 }
 
@@ -80,7 +83,7 @@ void GameObjects::update()
 		obj->draw();
 	}
 
-	for (int i = 0; i < capacity; i--)
+	for (int i = 0; i < capacity; i++)
 	{
 		GameObject* obj = objects[i];
 		if (!obj) continue;

@@ -4,7 +4,8 @@
 #include "Player.h"
 #include "Enemy.h"
 
-Bullet::Bullet(int pos, const char* face, Direction direction=Direction::Left) : GameObject(pos, face), isFiring(true), direction(direction)
+Bullet::Bullet(int pos, const char* face, Direction direction=Direction::Left) 
+	: GameObject(pos, face), isFiring(true), direction(direction)
 {
 }
 

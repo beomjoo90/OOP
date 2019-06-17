@@ -10,12 +10,21 @@
 #include "Bullet.h"
 #include "Integer.h"
 #include "GameObjects.h"
+#include "MyString.h"
 
 
 using namespace std;
 
 int main()
 {
+	MyString hello = "hello";
+	MyString world = "world";
+	MyString helloworld = hello + world;
+	world = "new world";
+	
+	cout << helloworld << hello + world << endl;
+
+
 #if 0
 	Integer i = 10;
 	Integer j = 20;
@@ -29,21 +38,22 @@ int main()
 	l.print(); // 29
 
 	Integer::printStat();
-#endif
-	GameObjects& objects = GameObjects::getInstance();
 
+	GameObjects& objects = GameObjects::getInstance();
 
 	objects.add(new Player{ 30, "(^_^)" });
 	objects.add(new Enemy{ 60, "(*--*)" });
 
+	Screen& screen = Screen::getInstance();
 	while (true)
 	{
-		Screen::getInstance().clear();
+		screen.clear();
 
 		objects.update();
 
-		Screen::getInstance().render();
+		screen.render();
 		Sleep(66);
 	}
+#endif
 	return 0;
 }

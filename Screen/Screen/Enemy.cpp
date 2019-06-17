@@ -15,8 +15,10 @@ void Enemy::moveRandom()
 }
 
 void Enemy::update()
-{	
+{
+	moveRandom();
 }
+
 
 void Enemy::getHit()
 {

@@ -4,82 +4,118 @@
 #include <iostream>
 #include <conio.h>
 #include <Windows.h>
+#include "Utils.h"
 
 using namespace std;
 
-void draw(char* loc, const char* face)
-{
-	strncpy(loc, face, strlen(face));
-}
+class GameObject {
+	char* shape;
+	int width;
+	int height;
+	Position pos;
+	int direction;
+
+public:
+	GameObject(const char* shape, int width, int height) : height(height), width(width), shape(nullptr), pos(0, 0), direction(1)
+	{
+		if (!shape || strlen(shape) == 0 || width == 0 || height == 0)
+		{
+			this->shape = new char[1];
+			this->shape[0] = 'x';
+			width = 1;
+			height = 1;
+		} else {
+			this->shape = new char[(width + 1)*height];
+			for (int i = 0; i < height; i++) {
+				strncpy(&this->shape[i*(width + 1)], &shape[i*(width + 1)], width);
+				this->shape[i*(width + 1) + width] = '\0';
+			}
+		}
+		this->width = width;
+		this->height = height;
+	}
+	virtual ~GameObject() {
+		if (shape) { delete[] shape; }
+		width = 0, height = 0;
+	}
+
+	void setPos(int x, int y) { this->pos.x = x; this->pos.y = y; }
+
+	void draw() {
+		Borland::gotoxy(pos);
+		for (int i = 0; i < height; i++) {
+			cout << &shape[i*(width + 1)];
+			Borland::gotoxy(pos.x, pos.y + i+1);
+		}
+	}
+
+	void erase() {
+		Borland::gotoxy(pos);
+		for (int i = 0; i < height; i++) {
+			for (int j = 0; j < width; j++) {
+				cout << " ";
+			}
+			Borland::gotoxy(pos.x, pos.y + i+1);
+		}
+	}
+
+	void setDirection(int direction) { this->direction = direction; }
+
+	virtual void update() {
+		switch (direction)
+		{
+		case 1:
+			(this->pos).x++;
+			if (this->pos.x > 70) {
+				this->pos.x = 70;
+				this->direction = 2;
+			}
+			break;
+
+		case 2:
+			(this->pos).x--;
+			if (this->pos.x < 0) {
+				this->pos.x = 0;
+				this->direction = 1;
+			}
+			break;
+
+		case 3:
+			(this->pos).y++;
+			if (this->pos.y > 20) {
+				this->pos.y = 20;
+				this->direction = 4;
+			}
+			break;
+
+		case 4:
+			(this->pos).y--;
+			if (this->pos.y < 0) {
+				this->pos.y = 0;
+				this->direction = 3;
+			}
+			break;
+		}
+		
+	}
+};
 
 int main()
 {
-	const int screen_size = 80;
-	char screen[screen_size + 1];
-	char player_face[] = "(^__^)";
-	int player_pos = 20;
-	char enemy_face[] = "(*--*)";
-	int  enemy_pos = 60;
-	const int max_bullets = 100;
-	char bullet_face[] = "+";
-	int bullet_positions[max_bullets];
-
-	for (int i = 0; i < max_bullets; ++i)
-		bullet_positions[i] = -1;
+	GameObject player("xxx\nyyy\nzzz\n", 3, 3);
+	GameObject enemy("--\n00\n--\n", 2, 3);
+	player.setPos(1, 1);
+	enemy.setPos(10, 10);
+	enemy.setDirection(3);
 
 	while (true)
 	{
-		for (int i = 0; i < screen_size; i++) screen[i] = ' ';
-		screen[screen_size] = '\0';
+		player.draw(); enemy.draw();
+		Sleep(30);
+		player.erase(); enemy.erase();
 
-		if (_kbhit())
-		{
-			int c = _getch();
-			switch (c) {
-			case 'a':
-				player_pos = (player_pos - 1) % screen_size;
-				break;
-			case 'd':
-				player_pos = (player_pos + 1) % screen_size;
-				break;
-			case ' ':
-				int i = 0;
-				for (; i < max_bullets; i++) {
-					if (bullet_positions[i] == -1) break;
-				}
-				if (i < max_bullets) {
-					bullet_positions[i] = player_pos;
-				}
-				break;
-			}
-		}
-		draw(&screen[player_pos], player_face);
-		draw(&screen[enemy_pos], enemy_face);
-		for (int i = 0; i < max_bullets; ++i)
-		{
-			if (bullet_positions[i] == -1) continue;
-			draw(&screen[bullet_positions[i]], bullet_face);
-		}
-
-		// update
-		enemy_pos = (enemy_pos + rand() % 3 - 1) % screen_size;
-		for (int i = 0; i < max_bullets; ++i)
-		{
-			if (bullet_positions[i] == -1) continue;
-			if (bullet_positions[i] < enemy_pos) {
-				bullet_positions[i] = (bullet_positions[i] + 1) % screen_size;
-			}
-			else if (bullet_positions[i] > enemy_pos) {
-				bullet_positions[i] = (bullet_positions[i] - 1) % screen_size;
-			}
-			else {
-				bullet_positions[i] = -1;
-			}
-		}
-		printf("%s\r", screen);
-		Sleep(66);
+		player.update(); enemy.update();
 	}
-
 
 	return 0;
 }

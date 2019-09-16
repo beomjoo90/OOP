@@ -6,7 +6,7 @@
 struct Position {
 	int x;
 	int y;
-	Position(int x, int y) : x(x), y(y) {}
+	Position(int x = 0, int y = 0) : x(x), y(y) {}
 };
 
 class Borland {
@@ -30,7 +30,12 @@ public:
 	}
 	static void gotoxy(const Position* pos)
 	{
-		SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), _COORD{ (SHORT)pos->x, (SHORT)pos->y });
+		if (!pos) return;
+		gotoxy( (*pos).x, (*pos).y);
+	}
+	static void gotoxy(const Position& pos)
+	{
+		gotoxy( pos.x, pos.y);
 	}
 };
 

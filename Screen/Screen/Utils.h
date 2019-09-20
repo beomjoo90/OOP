@@ -12,6 +12,15 @@ struct Position {
 class Borland {
 
 public:
+	static void initialize()
+	{
+		CONSOLE_CURSOR_INFO cci;
+		cci.dwSize = 25;
+		cci.bVisible = FALSE;
+		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
+		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+	}
+
 	static int wherex()
 	{
 		CONSOLE_SCREEN_BUFFER_INFO  csbiInfo;

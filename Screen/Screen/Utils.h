@@ -12,18 +12,51 @@ struct Position {
 };
 
 class Input {
-	static INPUT_RECORD InputRecord;
+	static INPUT_RECORD InputRecord[128];
 	static DWORD Events;
 	static bool evaluated;
-	static bool gotEvent;
+	static bool gotMouseEvent;
+	static bool gotKeyEvent;
 	static Position mousePosition;
+	static WORD vKeyCode;
+
+	static void GetEvent()
+	{
+		evaluated = true;
+		DWORD numEvents = 0;
+
+		GetNumberOfConsoleInputEvents(GetStdHandle(STD_INPUT_HANDLE), &numEvents);
+		if (!numEvents) return;
+
+		ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), InputRecord, numEvents, &Events);
+		for (int i = 0; i < Events; i++) {
+			if (InputRecord[i].EventType == MOUSE_EVENT) {
+				if (InputRecord[i].Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
+					COORD coord;
+					coord.X = InputRecord[i].Event.MouseEvent.dwMousePosition.X;
+					coord.Y = InputRecord[i].Event.MouseEvent.dwMousePosition.Y;
+					SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
+					mousePosition.x = InputRecord[i].Event.MouseEvent.dwMousePosition.X;
+					mousePosition.y = InputRecord[i].Event.MouseEvent.dwMousePosition.Y;
+					gotMouseEvent = true;
+				}
+			}
+			else if (InputRecord[i].EventType == KEY_EVENT) {
+				if (InputRecord[i].Event.KeyEvent.bKeyDown) {
+					vKeyCode = InputRecord[i].Event.KeyEvent.wVirtualKeyCode;
+					gotKeyEvent = true;
+				}
+			}
+		}
+	}
 
 public:
 
 	static void EndOfFrame()
 	{
 		evaluated = false;
-		gotEvent = false;
+		gotMouseEvent = false;
+		gotKeyEvent = false;
 	}
 
 	static void Initialize()
@@ -33,39 +66,37 @@ public:
 		cci.dwSize = 25;
 		cci.bVisible = FALSE;
 		SetConsoleCursorInfo(GetStdHandle(STD_OUTPUT_HANDLE), &cci);
-		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT);
+		SetConsoleMode(GetStdHandle(STD_INPUT_HANDLE), ENABLE_PROCESSED_INPUT | ENABLE_MOUSE_INPUT | ENABLE_WINDOW_INPUT );
+
+		EndOfFrame();
 	}
 	static bool GetMouseEvent(Position& pos) {
+		if (evaluated == false) GetEvent();
 
-		if (evaluated == true) {
-			if (gotEvent == true) {
-				pos = mousePosition;
-				return true;
-			}
-			return false;
+		if (gotMouseEvent == true) {
+			pos = mousePosition;
+			return true;
 		}
-		evaluated = true;
-		ReadConsoleInput(GetStdHandle(STD_INPUT_HANDLE), &InputRecord, 1, &Events);
-		if (InputRecord.EventType == MOUSE_EVENT) {
-			if (InputRecord.Event.MouseEvent.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED) {
-				COORD coord;
-				coord.X = InputRecord.Event.MouseEvent.dwMousePosition.X;
-				coord.Y = InputRecord.Event.MouseEvent.dwMousePosition.Y;
-				SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE), coord);
-				mousePosition.x = InputRecord.Event.MouseEvent.dwMousePosition.X;
-				mousePosition.y = InputRecord.Event.MouseEvent.dwMousePosition.Y;
-				gotEvent = true;
-			}
+		return false;}
+
+	static bool GetKeyEvent(WORD& keyCode) {
+		if (evaluated == false) GetEvent();
+
+		if (gotKeyEvent == true) {
+			keyCode = vKeyCode;
+			return true;
 		}
-		return gotEvent;
+		return false;
 	}
 };
-INPUT_RECORD Input::InputRecord;
+INPUT_RECORD Input::InputRecord[128];
 DWORD Input::Events;
 
 bool Input::evaluated = false;
-bool Input::gotEvent = false;
+bool Input::gotMouseEvent = false;
+bool Input::gotKeyEvent = false;
 Position Input::mousePosition{ -1, -1 };
+WORD Input::vKeyCode{ 0 };
 
 class Borland {
 
@@ -105,7 +136,7 @@ class Screen {
 	char* canvas;
 
 	static Screen* instance;
-	Screen(int width = 70, int height = 25)
+	Screen(int width = 40, int height = 80)
 		: width(width), height(height),
 		canvas(new char[(width + 1)*height])
 

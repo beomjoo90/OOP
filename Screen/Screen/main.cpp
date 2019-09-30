@@ -10,18 +10,17 @@
 using namespace std;
 
 class GameObject {
-	char* shape;
-	int width;
-	int height;
-	Position pos;
-	int direction;
-	Screen& screen;
-	Position mousePosition;
+	char*		shape;
+	int			width;
+	int			height;
+	Position	pos;
+	int			direction;
+	Screen&		screen;
+
 public:
 	GameObject(const char* shape, int width, int height) 
-		: height(height), width(width), shape(nullptr), pos(0, 0), direction(1), mousePosition{ -1,-1 },
-		screen(Screen::getInstance())
-	{
+		: height(height), width(width), shape(nullptr), pos(0, 0), direction(1),
+		screen(Screen::getInstance()) {
 		if (!shape || strlen(shape) == 0 || width == 0 || height == 0)
 		{
 			this->shape = new char[1];
@@ -35,86 +34,104 @@ public:
 		this->width = width;
 		this->height = height;
 	}
+
 	virtual ~GameObject() {
 		if (shape) { delete[] shape; }
 		width = 0, height = 0;
 	}
 
+	void setShape(const char* shape) {
+		if (!shape) return;
+		strncpy(this->shape, shape, width*height);
+	}
+
 	void setPos(int x, int y) { this->pos.x = x; this->pos.y = y; }
 
+	Position& getPos() { return pos; }
+		
 	void draw() {
 		screen.draw(shape, width, height, pos);
 	}
 
 	void setDirection(int direction) { this->direction = direction; }
 
-	virtual void update() {
+	virtual void update() {}
+};
 
-		
-		if (Input::GetMouseEvent(mousePosition) == false) return;
+class Player : public GameObject {	
 
-		switch (direction)
-		{
-		case 1:
-		case 2:
-			if (this->pos.x < mousePosition.x) {
-				(this->pos.x)++;
+	static const string block[4];
+	int current;
+
+public:
+	Player() : current(0), GameObject(block[current].c_str(), 3, 3) {
+		setPos(10, 1);
+	}
+
+	void update() {
+		WORD keyCode;
+
+		if (Input::GetKeyEvent(keyCode)) {
+			switch (keyCode) {
+			case VK_RIGHT:
+				getPos().x++;
+				break;
+
+			case VK_LEFT:
+				getPos().x--;
+				break;
+
+			case VK_UP:
+				current = (current + 1) % 4;
+				setShape(block[current].c_str());
+				break;
+				break;
+
+			case VK_DOWN:
+				getPos().y = 70;
+				break;
+
+			case 0x41: //'a'
+				current = (current + 1) % 4;
+				setShape(block[current].c_str());
+				break;
+
+			case 0x44: //'d'
+				current = (current + 3) % 4;
+				setShape(block[current].c_str());
+				break;
 			}
-			else if (this->pos.x > mousePosition.x) {
-				(this->pos.x)--;
-			}
-			break;
-		case 3:
-		case 4:
-			if (this->pos.y < mousePosition.y) {
-				(this->pos.y)++;
-			}
-			else if (this->pos.y > mousePosition.y) {
-				(this->pos.y)--;
-			}
-			break;
 		}
-		
+		getPos().y = (getPos().y + 1)% 80;
 	}
 };
+const string Player::block[4]{ "\xB1\xB1  \xB1  \xB1 ", "  \xB1\xB1\xB1\xB1   ", " \xB1  \xB1  \xB1\xB1", "   \xB1\xB1\xB1\xB1  " };
 
 int main()
 {
-	GameObject player("xxxyyyzzz", 3, 3);
-	GameObject enemy2("^^^^^00000^^^^^", 5, 3);
-	GameObject enemy("--00--", 2, 3);
 	Screen&	 screen = Screen::getInstance();
-
-	int a;
-
 	vector<GameObject *> gameObjects;
 
-	gameObjects.push_back(&player);
-	gameObjects.push_back(&enemy);
-	gameObjects.push_back(&enemy2);
-	
-	player.setPos(1, 1);
-	enemy.setPos(10, 10);
-	enemy2.setPos(5, 5);
-	enemy.setDirection(3);	
-	enemy2.setDirection(4);
+	system("mode con cols=45 lines=85");
+	system("chcp 437");
 
-	screen.clear(); screen.render();
+	gameObjects.push_back(new Player);
+		
+	screen.clear(); screen.render();		
+
 	while (true)
 	{	
-		for (auto it = gameObjects.cbegin(); 
-					it != gameObjects.cend(); it++)
-			(*it)->draw();
-
-		screen.render();		
-		Sleep(30);
 		screen.clear();
-
 		for (auto obj : gameObjects) obj->update();
-		
 
-		Input::EndOfFrame();
+		for (auto it = gameObjects.cbegin(); 
+			it != gameObjects.cend(); it++)
+			(*it)->draw();
 		
+		screen.render();		
+		Sleep(150);
+
+		Input::EndOfFrame();		
 	}
 
 	return 0;

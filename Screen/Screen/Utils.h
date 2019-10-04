@@ -9,6 +9,9 @@ struct Position {
 	int x;
 	int y;
 	Position(int x = 0, int y = 0) : x(x), y(y) {}
+
+	Position(const Position& other) 
+		: Position(other.x, other.y) {}
 };
 
 class Input {
@@ -136,7 +139,7 @@ class Screen {
 	char* canvas;
 
 	static Screen* instance;
-	Screen(int width = 40, int height = 80)
+	Screen(int width = 80, int height = 25)
 		: width(width), height(height),
 		canvas(new char[(width + 1)*height])
 
@@ -182,6 +185,9 @@ public:
 		canvas[width + (height - 1)*(width + 1)] = '\0';
 	}
 
+
+	int getHeight() const { return height;  }
+	int getWidth() const { return width;  }
 };
 
 Screen* Screen::instance = nullptr;

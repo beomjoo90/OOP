@@ -5,6 +5,8 @@
 #include <conio.h>
 #include <Windows.h>
 #include <vector>
+#include <string>
+#include <ctime>
 #include "Utils.h"
 
 using namespace std;
@@ -14,12 +16,15 @@ class GameObject {
 	int			width;
 	int			height;
 	Position	pos;
-	int			direction;
 	Screen&		screen;
 
+	vector<GameObject *> children;
+
+
 public:
-	GameObject(const char* shape, int width, int height) 
-		: height(height), width(width), shape(nullptr), pos(0, 0), direction(1),
+	GameObject(const char* shape, int width, int height, const Position& pos = Position{ 0, 0 } )
+		: height(height), width(width), 
+		shape(nullptr), pos(pos), 
 		screen(Screen::getInstance()) {
 		if (!shape || strlen(shape) == 0 || width == 0 || height == 0)
 		{
@@ -40,6 +45,11 @@ public:
 		width = 0, height = 0;
 	}
 
+	void add(GameObject* child) {
+		if (!child) return;
+		children.push_back(child);
+	}
+
 	void setShape(const char* shape) {
 		if (!shape) return;
 		strncpy(this->shape, shape, width*height);
@@ -49,24 +59,37 @@ public:
 
 	Position& getPos() { return pos; }
 		
-	void draw() {
+	virtual void draw() 
+	{
 		screen.draw(shape, width, height, pos);
+
+		for (auto child : children) child->draw();
 	}
 
-	void setDirection(int direction) { this->direction = direction; }
+	void internalUpdate()
+	{
+		update();
+		for (auto child : children)
+			child->update();
+	}
 
-	virtual void update() {}
+	virtual void update() 
+	{	
+	}
+
+	vector<GameObject *>& getChildren() { return children;  }
 };
 
-class Player : public GameObject {	
+class Block : public GameObject {	
 
-	static const string block[4];
+	vector<string> sprites;
 	int current;
 
 public:
-	Player() : current(0), GameObject(block[current].c_str(), 3, 3) {
-		setPos(10, 1);
-	}
+	Block(vector<string>& sprites, int w, int h, 
+		const Position& pos = Position{ 0,0 } )
+		: sprites(sprites), current(0), 
+		GameObject(sprites[current].c_str(), w, h, pos) {}
 
 	void update() {
 		WORD keyCode;
@@ -82,47 +105,65 @@ public:
 				break;
 
 			case VK_UP:
-				current = (current + 1) % 4;
-				setShape(block[current].c_str());
+				current = (current + 1) % sprites.size();
+				setShape(sprites[current].c_str());
 				break;
 				break;
 
 			case VK_DOWN:
-				getPos().y = 70;
+				getPos().y = Screen::getInstance().getHeight();
 				break;
 
 			case 0x41: //'a'
-				current = (current + 1) % 4;
-				setShape(block[current].c_str());
+				current = (current + 1) % sprites.size();
+				setShape(sprites[current].c_str());
 				break;
 
 			case 0x44: //'d'
-				current = (current + 3) % 4;
-				setShape(block[current].c_str());
+				current = (current + 3) % sprites.size();
+				setShape(sprites[current].c_str());
 				break;
 			}
 		}
-		getPos().y = (getPos().y + 1)% 80;
+		getPos().y = (getPos().y + 1)% Screen::getInstance().getHeight();
+		
 	}
 };
-const string Player::block[4]{ "\xB1\xB1  \xB1  \xB1 ", "  \xB1\xB1\xB1\xB1   ", " \xB1  \xB1  \xB1\xB1", "   \xB1\xB1\xB1\xB1  " };
 
 int main()
 {
+	vector<string> sprites { "\xB1\xB1  \xB1  \xB1 ",
+		"  \xB1\xB1\xB1\xB1   ", 
+		" \xB1  \xB1  \xB1\xB1", 
+		"   \xB1\xB1\xB1\xB1  "
+	};
+	vector<string> sprites2{ "\xB2\xB2  ", "  \xB2\xB2" };
+	
 	Screen&	 screen = Screen::getInstance();
 	vector<GameObject *> gameObjects;
 
-	system("mode con cols=45 lines=85");
+	srand(time(nullptr));
+
+	string mode{ "mode con cols="
+		+ to_string(screen.getWidth() + 4)
+		+ " lines=" + to_string(screen.getHeight() + 5) };
+	system(mode.c_str());
 	system("chcp 437");
 
-	gameObjects.push_back(new Player);
+	auto parent = new Block{ sprites, 3,3,
+		Position{rand() % screen.getWidth(), 0} };
+	
+
+	auto child = new Block{ sprites2, 2,2, Position{1, 1} };
+	parent->add(child);
+	gameObjects.push_back(parent);
 		
 	screen.clear(); screen.render();		
 
 	while (true)
 	{	
 		screen.clear();
-		for (auto obj : gameObjects) obj->update();
+		for (auto obj : gameObjects) obj->internalUpdate();
 
 		for (auto it = gameObjects.cbegin(); 
 			it != gameObjects.cend(); it++)

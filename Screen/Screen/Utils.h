@@ -9,10 +9,33 @@ struct Position {
 	int x;
 	int y;
 	Position(int x = 0, int y = 0) : x(x), y(y) {}
+	Position(const Position& other) : Position(other.x, other.y) {}
 
-	Position(const Position& other) 
-		: Position(other.x, other.y) {}
+	Position operator+(const Position& other) {
+		return Position{ this->x + other.x, this->y + other.y };
+	}
 };
+
+enum class KeyCode {
+	Space = 0,
+	Left,
+	Right,
+	Up,
+	Down,
+
+	Esc,
+	Enter,
+
+	A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z
+};
+
+static vector<WORD> keyCodeTable{
+	VK_SPACE, VK_LEFT, VK_RIGHT, VK_UP, VK_DOWN,
+	VK_ESCAPE, VK_RETURN, 
+	0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x47, 0x48, 0x49, 0x4A, 0x4B, 0x4C, 0x4D, 0x4E, 0x4F, 0x50,
+	0x51, 0x52, 0x53, 0x54, 0x55, 0x56, 0x57, 0x58, 0x59, 0x5A
+};
+
 
 class Input {
 	static INPUT_RECORD InputRecord[128];
@@ -91,6 +114,13 @@ public:
 		}
 		return false;
 	}
+
+	static bool GetKeyDown(KeyCode key) {
+		if (evaluated == false) GetEvent();
+
+		if (gotKeyEvent == true) return keyCodeTable[(int)key] == vKeyCode;		
+		return false;
+	}
 };
 INPUT_RECORD Input::InputRecord[128];
 DWORD Input::Events;
@@ -139,7 +169,7 @@ class Screen {
 	char* canvas;
 
 	static Screen* instance;
-	Screen(int width = 80, int height = 25)
+	Screen(int width = 90, int height = 50)
 		: width(width), height(height),
 		canvas(new char[(width + 1)*height])
 
@@ -158,6 +188,24 @@ public:
 		if (instance) {
 			delete[] canvas;
 			instance = nullptr;
+		}
+	}
+
+	int getWidth() const { return width; }
+
+	int getHeight() const { return height;  }
+
+	void drawRect(const Position& pos, int w, int h)
+	{
+		canvas[pos.x] = '\xDA';
+		canvas[pos.x + w-1] = '\xBF';
+		memset(&canvas[pos.x + 1], '\xC4', w - 2);
+		canvas[pos.x + (pos.y + (h - 1))*(width + 1)] = '\xC0';
+		canvas[pos.x + (pos.y + (h - 1))*(width + 1) + w-1] = '\xD9';
+		memset(&canvas[pos.x + 1 + (pos.y + (h - 1))*(width + 1)], '\xC4', w - 2);
+		for (int i = 1; i < h-1; i++) {
+			canvas[pos.x + (pos.y + i)*(width + 1)] = '\xB3';
+			canvas[pos.x + w-1 + (pos.y + i)*(width + 1)] = '\xB3';
 		}
 	}
 
@@ -184,10 +232,6 @@ public:
 		memset(canvas, ' ', (width + 1)*height);
 		canvas[width + (height - 1)*(width + 1)] = '\0';
 	}
-
-
-	int getHeight() const { return height;  }
-	int getWidth() const { return width;  }
 };
 
 Screen* Screen::instance = nullptr;

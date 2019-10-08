@@ -58,19 +58,24 @@ public:
 	void setPos(int x, int y) { this->pos.x = x; this->pos.y = y; }
 
 	Position& getPos() { return pos; }
-		
-	virtual void draw() 
-	{
-		screen.draw(shape, width, height, pos);
 
-		for (auto child : children) child->draw();
+	void internalDraw(const Position& accumulatedPos = Position{ 0,0 })
+	{
+		draw(accumulatedPos);
+		for (auto child : children) 
+			child->internalDraw( pos + accumulatedPos );
+	}
+		
+	virtual void draw(const Position& accumulatedPos = Position{ 0,0 })
+	{		
+		screen.draw(shape, width, height, pos + accumulatedPos);
 	}
 
 	void internalUpdate()
 	{
 		update();
 		for (auto child : children)
-			child->update();
+			child->internalUpdate();
 	}
 
 	virtual void update() 
@@ -92,39 +97,32 @@ public:
 		GameObject(sprites[current].c_str(), w, h, pos) {}
 
 	void update() {
-		WORD keyCode;
-
-		if (Input::GetKeyEvent(keyCode)) {
-			switch (keyCode) {
-			case VK_RIGHT:
-				getPos().x++;
-				break;
-
-			case VK_LEFT:
-				getPos().x--;
-				break;
-
-			case VK_UP:
-				current = (current + 1) % sprites.size();
-				setShape(sprites[current].c_str());
-				break;
-				break;
-
-			case VK_DOWN:
-				getPos().y = Screen::getInstance().getHeight();
-				break;
-
-			case 0x41: //'a'
-				current = (current + 1) % sprites.size();
-				setShape(sprites[current].c_str());
-				break;
-
-			case 0x44: //'d'
-				current = (current + 3) % sprites.size();
-				setShape(sprites[current].c_str());
-				break;
-			}
+		if (Input::GetKeyDown(KeyCode::Right)) {
+			getPos().x++;
 		}
+		if (Input::GetKeyDown(KeyCode::Left)) {
+			getPos().x--;
+		}
+		if (Input::GetKeyDown(KeyCode::Up)) {
+			current = (current + 1) % sprites.size();
+			setShape(sprites[current].c_str()); 
+		}
+		if (Input::GetKeyDown(KeyCode::Up)) {
+			current = (current + 1) % sprites.size();
+			setShape(sprites[current].c_str());
+		}
+		if (Input::GetKeyDown(KeyCode::Up)) {
+			getPos().y = Screen::getInstance().getHeight();
+		}		
+		if (Input::GetKeyDown(KeyCode::A)) {
+			current = (current + 1) % sprites.size();
+			setShape(sprites[current].c_str());
+		}
+		if (Input::GetKeyDown(KeyCode::D)) {
+			current = (current + 3) % sprites.size();
+			setShape(sprites[current].c_str());
+		}
+		
 		getPos().y = (getPos().y + 1)% Screen::getInstance().getHeight();
 		
 	}
@@ -151,10 +149,10 @@ int main()
 	system("chcp 437");
 
 	auto parent = new Block{ sprites, 3,3,
-		Position{rand() % screen.getWidth(), 0} };
+		Position{screen.getWidth()/2, 0} };
 	
 
-	auto child = new Block{ sprites2, 2,2, Position{1, 1} };
+	auto child = new Block{ sprites2, 2,2, Position{5, 0} };
 	parent->add(child);
 	gameObjects.push_back(parent);
 		
@@ -167,7 +165,7 @@ int main()
 
 		for (auto it = gameObjects.cbegin(); 
 			it != gameObjects.cend(); it++)
-			(*it)->draw();
+			(*it)->internalDraw();
 		
 		screen.render();		
 		Sleep(150);

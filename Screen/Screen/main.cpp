@@ -12,19 +12,22 @@
 using namespace std;
 
 class GameObject {
+
+	bool active;
+	
+
+protected:
 	char*		shape;
 	int			width;
 	int			height;
 	Position	pos;
 	Screen&		screen;
-
 	vector<GameObject *> children;
-
 
 public:
 	GameObject(const char* shape, int width, int height, const Position& pos = Position{ 0, 0 } )
 		: height(height), width(width), 
-		shape(nullptr), pos(pos), 
+		shape(nullptr), pos(pos), active(true),
 		screen(Screen::getInstance()) {
 		if (!shape || strlen(shape) == 0 || width == 0 || height == 0)
 		{
@@ -43,7 +46,20 @@ public:
 	virtual ~GameObject() {
 		if (shape) { delete[] shape; }
 		width = 0, height = 0;
+
+		while (children.size()) {
+			auto back = children.back();
+			children.pop_back();
+			delete back;
+		}
+
 	}
+
+	void setActive(bool active) {
+		this->active = active;
+	}
+
+	bool isActive() const { return active;  }
 
 	void add(GameObject* child) {
 		if (!child) return;
@@ -61,6 +77,7 @@ public:
 
 	void internalDraw(const Position& accumulatedPos = Position{ 0,0 })
 	{
+		if (active == false) return;
 		draw(accumulatedPos);
 		for (auto child : children) 
 			child->internalDraw( pos + accumulatedPos );
@@ -73,30 +90,35 @@ public:
 
 	void internalUpdate()
 	{
+		if (active == false) return;
 		update();
 		for (auto child : children)
 			child->internalUpdate();
 	}
 
 	virtual void update() 
-	{	
+	{
+		
 	}
 
-	vector<GameObject *>& getChildren() { return children;  }
+	vector<GameObject *>& getChildren() { return children;  }	
 };
 
 class Block : public GameObject {	
 
 	vector<string> sprites;
 	int current;
+	bool movable;
 
 public:
-	Block(vector<string>& sprites, int w, int h, 
+	Block(vector<string>& sprites, int w, int h, bool movable=true,
 		const Position& pos = Position{ 0,0 } )
-		: sprites(sprites), current(0), 
+		: sprites(sprites), current(0), movable(movable),
 		GameObject(sprites[current].c_str(), w, h, pos) {}
 
 	void update() {
+		if (movable == false) return;
+
 		if (Input::GetKeyDown(KeyCode::Right)) {
 			getPos().x++;
 		}
@@ -123,7 +145,11 @@ public:
 			setShape(sprites[current].c_str());
 		}
 		
-		getPos().y = (getPos().y + 1)% Screen::getInstance().getHeight();
+		pos.y++;
+		if (pos.y >= screen.getHeight()-1) {
+			setActive(false);
+		}
+		
 		
 	}
 };
@@ -148,19 +174,39 @@ int main()
 	system(mode.c_str());
 	system("chcp 437");
 
-	auto parent = new Block{ sprites, 3,3,
+	auto parent = new Block{ sprites, 3,3, true,
 		Position{screen.getWidth()/2, 0} };
 	
 
-	auto child = new Block{ sprites2, 2,2, Position{5, 0} };
+	auto child = new Block{ sprites2, 2,2, false, Position{5, 0} };
 	parent->add(child);
-	gameObjects.push_back(parent);
+	gameObjects.push_back(parent);	
 		
 	screen.clear(); screen.render();		
 
 	while (true)
 	{	
 		screen.clear();
+
+		bool erased = false;
+		for (auto it = gameObjects.begin(); it != gameObjects.end(); )
+		{
+			auto obj = *it;
+			if (obj->isActive() == false) {
+				it = gameObjects.erase(it);
+				erased = true;
+				delete obj;
+				
+			}
+			else {
+				it++;
+			}
+		}
+		if (erased == true) {
+			gameObjects.push_back( new Block{ sprites2, 2,2, true, Position{screen.getWidth() / 2, 0} } );
+		}
+
+
 		for (auto obj : gameObjects) obj->internalUpdate();
 
 		for (auto it = gameObjects.cbegin(); 

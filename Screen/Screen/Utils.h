@@ -14,9 +14,6 @@ struct Position {
 	Position operator+(const Position& other) {
 		return Position{ this->x + other.x, this->y + other.y };
 	}
-	Position operator-(const Position& other) {
-		return Position{ this->x - other.x, this->y - other.y };
-	}
 };
 
 enum class KeyCode {

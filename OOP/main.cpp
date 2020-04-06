@@ -4,6 +4,10 @@
 #include <iostream>
 #include <Windows.h>
 
+
+// commit practice
+// Ä¿¹Ô ¿¬½À
+
 void printSpaces(int i)
 {
 	for (int j = 0; j < i; j++)

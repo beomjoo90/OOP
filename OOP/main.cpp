@@ -42,23 +42,54 @@ void render(const char* canvas, int lastPosition)
 	printf("%s\r", canvas);
 }
 
+struct Player {
+	int		pos;
+	char	shape[100];
+
+	// constructor 생성자
+	Player(const char* shape, int maxCount)
+	{
+		strcpy(this->shape, shape);
+		this->pos = rand() % (maxCount - strlen(this->shape));
+	}
+};
+
+struct Enemy {
+	int		pos;
+	char	shape[100];
+
+	Enemy(const char* shape, int maxCount)
+	{	
+		strcpy(this->shape, shape);
+		this->pos = rand() % (maxCount - strlen(this->shape));
+	}
+};
+
+struct Bullet {
+	int		pos;
+	char	shape[100];
+	bool	isFired;
+	int		direction;
+
+	Bullet(const char* shape)
+	{
+		this->pos = 0;
+		strcpy(this->shape, shape);
+		this->isFired = false;
+		this->direction = 0;
+	}
+};
+
 int main()
 {
 	const int maxCount = 80;
 	char canvas[maxCount + 1];
-	int player_pos = 0;
-	char player_shape[maxCount] = "(o_o)";
-	int enemy_pos = 0;
-	char enemy_shape[maxCount] = "(*______*)";
-	int bullet_pos = 0;
-	char bullet_shape[maxCount] = "-->";
-	bool isFired = false;
-	int direction = 0; // 0 : left->right, 1: right->left
+	Player	player{ "(o_o)", maxCount };
+	Enemy   enemy{ "(*___*)", maxCount };
+	Bullet	bullet{"->"};
 
-	//srand(time(nullptr));
-	player_pos = rand() % (maxCount - strlen(player_shape));
-	enemy_pos = rand() % (maxCount - strlen(enemy_shape));
-	
+
+	/*
 	while (true)		
 	{
 		clear(canvas, maxCount);
@@ -125,6 +156,7 @@ int main()
 		render(canvas, maxCount);		
 		Sleep(100);
 	}
+	*/
 	printf("\n정상적으로 종료되었습니다.\n");
 	return 0;
 }

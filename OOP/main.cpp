@@ -26,33 +26,10 @@ void clear(char* canvas, int length)
 	canvas[length] = '\0';
 }
 
-bool isInside(const char* shape, int pos, int length)
-{
-	return pos <= (length - strlen(shape)) && pos >= 0;
-}
-
-void draw(char* canvas, int pos, const char* source, int length)
-{
-	if (isInside(source, pos, length) == false) return;
-	strncpy(&canvas[pos], source, strlen(source));
-}
-
 void render(const char* canvas, int lastPosition)
 {
 	printf("%s\r", canvas);
 }
-
-struct Player {
-	int		pos;
-	char	shape[100];
-
-	// constructor 생성자
-	Player(const char* shape, int maxCount)
-	{
-		strcpy(this->shape, shape);
-		this->pos = rand() % (maxCount - strlen(this->shape));
-	}
-};
 
 struct Enemy {
 	int		pos;
@@ -62,6 +39,27 @@ struct Enemy {
 	{	
 		strcpy(this->shape, shape);
 		this->pos = rand() % (maxCount - strlen(this->shape));
+	}
+
+	bool isInside(int length)
+	{
+		return pos <= (length - strlen(shape)) && pos >= 0;
+	}
+
+	void moveRight()
+	{
+		pos++;
+	}
+
+	void moveLeft()
+	{
+		pos--;
+	}
+
+	void draw(char* canvas, int maxCount)
+	{
+		if (isInside(maxCount) == false) return;
+		strncpy(&canvas[pos], shape, strlen(shape));
 	}
 };
 
@@ -78,7 +76,97 @@ struct Bullet {
 		this->isFired = false;
 		this->direction = 0;
 	}
+
+	bool isInside(int length)
+	{
+		return pos <= (length - strlen(shape)) && pos >= 0;
+	}
+
+	void moveRight()
+	{
+		pos++;
+	}
+
+	void moveLeft()
+	{
+		pos--;
+	}
+
+	void update(int enemy_pos, const char* enemy_shape)
+	{
+		if (isFired == false) return;
+
+		if (direction == 0)
+			moveRight();
+		else moveLeft();
+
+		if ((direction == 0 && enemy_pos <= pos)
+			|| (direction == 1 && pos < enemy_pos + strlen(enemy_shape)))
+		{
+			isFired = false;
+		}
+		
+	}
+
+	void draw(char* canvas, int maxCount)
+	{
+		if (isFired == false) return;
+		if (isInside(maxCount) == false) return;
+		strncpy(&canvas[pos], shape, strlen(shape));
+	}
 };
+
+struct Player {
+	int		pos;
+	char	shape[100];
+
+	// constructor 생성자
+	Player(const char* shape, int maxCount)
+	{
+		strcpy(this->shape, shape);
+		this->pos = rand() % (maxCount - strlen(this->shape));
+	}
+
+	bool isInside(int length)
+	{
+		return pos <= (length - strlen(shape)) && pos >= 0;
+	}
+
+	void fire(int enemy_pos, Bullet* bullet)
+	{
+		if (bullet == nullptr) return;
+		if (bullet->isFired == true) return;
+
+		bullet->isFired = true;
+		bullet->pos = pos;
+		if (pos < enemy_pos) {
+			bullet->pos += strlen(shape) - 1;
+			strcpy(bullet->shape, "-->");
+			bullet->direction = 0;
+		}
+		else {
+			strcpy(bullet->shape, "<--");
+			bullet->direction = 1;
+		}
+	}
+
+	void moveRight()
+	{
+		pos++;
+	}
+
+	void moveLeft()
+	{
+		pos--;
+	}
+
+	void draw(char* canvas, int maxCount)
+	{
+		if (isInside(maxCount) == false) return;
+		strncpy(&canvas[pos], shape, strlen(shape));
+	}
+};
+
 
 int main()
 {
@@ -88,15 +176,12 @@ int main()
 	Enemy   enemy{ "(*___*)", maxCount };
 	Bullet	bullet{"->"};
 
-
-	/*
 	while (true)		
 	{
 		clear(canvas, maxCount);
 				
 		// update game objects (player, enemy ...)
-		if (isInside(player_shape, player_pos, maxCount) == false
-			|| isInside(enemy_shape, enemy_pos, maxCount) == false)
+		if (player.isInside(maxCount) == false || enemy.isInside(maxCount) == false)
 			break; // check game loop termination condition
 
 		if (_kbhit()) {
@@ -104,59 +189,33 @@ int main()
 			//printf("\n%c %d\n", key, key);
 			switch (key) {
 			case 'a':
-				player_pos--;
+				player.moveLeft();
 				break;
 			case 'd':
-				player_pos++;
+				player.moveRight();
 				break;
 			case ' ':
-				if (isFired == true) 
-					break;
-				isFired = true;
-				bullet_pos = player_pos;
-				if (player_pos < enemy_pos) {
-					bullet_pos += strlen(player_shape)-1;
-					strncpy(bullet_shape, "-->", strlen("-->"));
-					direction = 0;
-				}
-				else {
-					strncpy(bullet_shape, "<--", strlen("<--"));
-					direction = 1;
-				}
+				player.fire(enemy.pos, &bullet);
 				break;
 			case 'w':
-				enemy_pos++;
+				enemy.moveRight();
 				break;
 			case 's':
-				enemy_pos--;
+				enemy.moveLeft();
 				break;
 			}
 		}
-		if (isFired == true) {
-			if (direction == 0)
-				bullet_pos++;
-			else bullet_pos--;
-
-			if ( (direction == 0 && enemy_pos <= bullet_pos)
-				|| (direction == 1 && bullet_pos < enemy_pos+strlen(enemy_shape) ) )
-			{
-				isFired = false;
-			}
-		}
-
-
+		bullet.update(enemy.pos, enemy.shape);
 		
 		// draw game objects to a canvas (player, enemy ...)
-		draw(canvas, player_pos, player_shape, maxCount);
-		draw(canvas, enemy_pos, enemy_shape, maxCount);
-		if (isFired == true)
-			draw(canvas, bullet_pos, bullet_shape, maxCount);
+		player.draw(canvas, maxCount);
+		enemy.draw(canvas, maxCount);
+		bullet.draw(canvas, maxCount);		
 		
 		// display canvas to a monitor
 		render(canvas, maxCount);		
 		Sleep(100);
 	}
-	*/
 	printf("\n정상적으로 종료되었습니다.\n");
 	return 0;
 }

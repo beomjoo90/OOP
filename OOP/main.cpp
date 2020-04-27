@@ -36,9 +36,9 @@ struct Enemy {
 	char	shape[100];
 
 	Enemy(const char* shape, int maxCount)
+		: pos{ rand() % (maxCount - (int)strlen(shape)) }
 	{	
 		strcpy(this->shape, shape);
-		this->pos = rand() % (maxCount - strlen(this->shape));
 	}
 
 	bool isInside(int length)
@@ -68,15 +68,13 @@ struct Bullet {
 	char	shape[100];
 	bool	isFired;
 	int		direction;
-
-	Bullet(const char* shape)
+			
+	Bullet(const char* shape = "")
+		: pos(-1), isFired(false), direction(0)
 	{
-		this->pos = 0;
 		strcpy(this->shape, shape);
-		this->isFired = false;
-		this->direction = 0;
 	}
-
+	
 	bool isInside(int length)
 	{
 		return pos <= (length - strlen(shape)) && pos >= 0;
@@ -114,7 +112,7 @@ struct Bullet {
 		if (isInside(maxCount) == false) return;
 		strncpy(&canvas[pos], shape, strlen(shape));
 	}
-};
+}; // 구조체 Bullet 정의
 
 struct Player {
 	int		pos;
@@ -122,9 +120,9 @@ struct Player {
 
 	// constructor 생성자
 	Player(const char* shape, int maxCount)
+		: pos(rand() % (maxCount - strlen(shape)))
 	{
 		strcpy(this->shape, shape);
-		this->pos = rand() % (maxCount - strlen(this->shape));
 	}
 
 	bool isInside(int length)
@@ -140,7 +138,7 @@ struct Player {
 		bullet->isFired = true;
 		bullet->pos = pos;
 		if (pos < enemy_pos) {
-			bullet->pos += strlen(shape) - 1;
+			bullet->pos += (int)strlen(shape) - 1;
 			strcpy(bullet->shape, "-->");
 			bullet->direction = 0;
 		}
@@ -168,13 +166,23 @@ struct Player {
 };
 
 
+Bullet* findUnusedBullet(Bullet bullets[], int maxBullets)
+{
+	for (int i = 0; i < maxBullets; i++)
+	{
+		if (bullets[i].isFired == true) continue;		
+		return &bullets[i];
+	}
+	return nullptr;
+}
+
 int main()
 {
 	const int maxCount = 80;
 	char canvas[maxCount + 1];
 	Player	player{ "(o_o)", maxCount };
 	Enemy   enemy{ "(*___*)", maxCount };
-	Bullet	bullet{"->"};
+	Bullet	bullets[maxCount];
 
 	while (true)		
 	{
@@ -186,6 +194,8 @@ int main()
 
 		if (_kbhit()) {
 			int key = _getch();
+			Bullet* bullet = nullptr;
+
 			//printf("\n%c %d\n", key, key);
 			switch (key) {
 			case 'a':
@@ -195,7 +205,9 @@ int main()
 				player.moveRight();
 				break;
 			case ' ':
-				player.fire(enemy.pos, &bullet);
+				bullet = findUnusedBullet(bullets, maxCount);
+				if (bullet == nullptr) break;				
+				player.fire(enemy.pos, bullet);
 				break;
 			case 'w':
 				enemy.moveRight();
@@ -205,12 +217,20 @@ int main()
 				break;
 			}
 		}
-		bullet.update(enemy.pos, enemy.shape);
+		for (int i = 0; i < maxCount; i++)
+		{
+			if (bullets[i].isFired == false) continue;
+			bullets[i].update(enemy.pos, enemy.shape);
+		}
 		
 		// draw game objects to a canvas (player, enemy ...)
 		player.draw(canvas, maxCount);
 		enemy.draw(canvas, maxCount);
-		bullet.draw(canvas, maxCount);		
+		for (int i = 0; i < maxCount; i++)
+		{
+			if (bullets[i].isFired == false) continue;
+			bullets[i].draw(canvas, maxCount);
+		}
 		
 		// display canvas to a monitor
 		render(canvas, maxCount);		

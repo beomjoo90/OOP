@@ -31,14 +31,21 @@ void render(const char* canvas, int lastPosition)
 	printf("%s\r", canvas);
 }
 
-struct Enemy {
+struct GameObject {
 	int		pos;
-	char	shape[100];
+	char	shape[100]; // 0 ... 99
 
-	Enemy(const char* shape, int maxCount)
-		: pos{ rand() % (maxCount - (int)strlen(shape)) }
-	{	
-		strcpy(this->shape, shape);
+	GameObject(int pos, const char* shape)
+		: pos(pos)
+	{
+		int len = strlen(shape); // len >= 0
+		if (len >= 100) {
+			// 0 ... 98
+			// 99에는 널문자
+			strncpy(this->shape, shape, 100 -1);
+			this->shape[100-1] = '\0';
+		} else 
+			strcpy(this->shape, shape);
 	}
 
 	bool isInside(int length)
@@ -61,33 +68,61 @@ struct Enemy {
 		if (isInside(maxCount) == false) return;
 		strncpy(&canvas[pos], shape, strlen(shape));
 	}
+
 };
 
-struct Bullet {
-	int		pos;
-	char	shape[100];
-	bool	isFired;
-	int		direction;
-			
-	Bullet(const char* shape = "")
-		: pos(-1), isFired(false), direction(0)
-	{
-		strcpy(this->shape, shape);
+struct Enemy {
+	GameObject obj;
+
+	Enemy(const char* shape, int maxCount)
+		: obj(rand() % (maxCount - (int)strlen(shape)), shape )
+	{	
 	}
-	
+
 	bool isInside(int length)
 	{
-		return pos <= (length - strlen(shape)) && pos >= 0;
+		return obj.isInside(length);
 	}
 
 	void moveRight()
 	{
-		pos++;
+		obj.moveRight();
 	}
 
 	void moveLeft()
 	{
-		pos--;
+		obj.moveLeft();
+	}
+
+	void draw(char* canvas, int maxCount)
+	{
+		obj.draw(canvas, maxCount);
+	}
+};
+
+struct Bullet {
+	GameObject obj;
+	bool	isFired;
+	int		direction;
+			
+	Bullet(const char* shape = "")
+		: obj(-1, shape), isFired(false), direction(0)
+	{
+	}
+	
+	bool isInside(int length)
+	{
+		return obj.isInside(length);
+	}
+
+	void moveRight()
+	{
+		obj.moveRight();
+	}
+
+	void moveLeft()
+	{
+		obj.moveLeft();
 	}
 
 	void update(int enemy_pos, const char* enemy_shape)
@@ -98,8 +133,8 @@ struct Bullet {
 			moveRight();
 		else moveLeft();
 
-		if ((direction == 0 && enemy_pos <= pos)
-			|| (direction == 1 && pos < enemy_pos + strlen(enemy_shape)))
+		if ((direction == 0 && enemy_pos <= obj.pos)
+			|| (direction == 1 && obj.pos < enemy_pos + strlen(enemy_shape)))
 		{
 			isFired = false;
 		}
@@ -109,25 +144,22 @@ struct Bullet {
 	void draw(char* canvas, int maxCount)
 	{
 		if (isFired == false) return;
-		if (isInside(maxCount) == false) return;
-		strncpy(&canvas[pos], shape, strlen(shape));
+		obj.draw(canvas, maxCount);
 	}
 }; // 구조체 Bullet 정의
 
 struct Player {
-	int		pos;
-	char	shape[100];
+	GameObject obj;
 
 	// constructor 생성자
 	Player(const char* shape, int maxCount)
-		: pos(rand() % (maxCount - strlen(shape)))
-	{
-		strcpy(this->shape, shape);
+		: obj(rand() % (maxCount - strlen(shape)), shape)
+	{	
 	}
 
 	bool isInside(int length)
 	{
-		return pos <= (length - strlen(shape)) && pos >= 0;
+		return obj.isInside(length);
 	}
 
 	void fire(int enemy_pos, Bullet* bullet)
@@ -136,32 +168,31 @@ struct Player {
 		if (bullet->isFired == true) return;
 
 		bullet->isFired = true;
-		bullet->pos = pos;
-		if (pos < enemy_pos) {
-			bullet->pos += (int)strlen(shape) - 1;
-			strcpy(bullet->shape, "-->");
+		bullet->obj.pos = obj.pos;
+		if (obj.pos < enemy_pos) {
+			bullet->obj.pos += (int)strlen(obj.shape) - 1;
+			strcpy(bullet->obj.shape, "-->");
 			bullet->direction = 0;
 		}
 		else {
-			strcpy(bullet->shape, "<--");
+			strcpy(bullet->obj.shape, "<--");
 			bullet->direction = 1;
 		}
 	}
 
 	void moveRight()
 	{
-		pos++;
+		obj.moveRight();
 	}
 
 	void moveLeft()
 	{
-		pos--;
+		obj.moveLeft();
 	}
 
 	void draw(char* canvas, int maxCount)
 	{
-		if (isInside(maxCount) == false) return;
-		strncpy(&canvas[pos], shape, strlen(shape));
+		obj.draw(canvas, maxCount);
 	}
 };
 
@@ -207,7 +238,7 @@ int main()
 			case ' ':
 				bullet = findUnusedBullet(bullets, maxCount);
 				if (bullet == nullptr) break;				
-				player.fire(enemy.pos, bullet);
+				player.fire(enemy.obj.pos, bullet);
 				break;
 			case 'w':
 				enemy.moveRight();
@@ -220,7 +251,7 @@ int main()
 		for (int i = 0; i < maxCount; i++)
 		{
 			if (bullets[i].isFired == false) continue;
-			bullets[i].update(enemy.pos, enemy.shape);
+			bullets[i].update(enemy.obj.pos, enemy.obj.shape);
 		}
 		
 		// draw game objects to a canvas (player, enemy ...)

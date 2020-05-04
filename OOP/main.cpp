@@ -38,15 +38,28 @@ struct GameObject {
 	GameObject(int pos, const char* shape)
 		: pos(pos)
 	{
+		setShape(shape);
+	}
+
+	//getter 게터
+	int getPos() { return pos; }
+	const char* getShape() { return shape; }
+
+	//setter 세터
+	void setPos(int pos) { this->pos = pos;  }
+	void setShape(const char* shape) 
+	{
 		int len = strlen(shape); // len >= 0
 		if (len >= 100) {
 			// 0 ... 98
 			// 99에는 널문자
-			strncpy(this->shape, shape, 100 -1);
-			this->shape[100-1] = '\0';
-		} else 
+			strncpy(this->shape, shape, 100 - 1);
+			this->shape[100 - 1] = '\0';
+		}
+		else
 			strcpy(this->shape, shape);
 	}
+
 
 	bool isInside(int length)
 	{
@@ -131,6 +144,7 @@ struct Bullet : public GameObject {
 			moveRight();
 		else moveLeft();
 
+		int pos = getPos();
 		if ((direction == 0 && enemy_pos <= pos)
 			|| (direction == 1 && pos < enemy_pos + strlen(enemy_shape)))
 		{
@@ -165,14 +179,16 @@ struct Player : public GameObject {
 		if (bullet->isFired == true) return;
 
 		bullet->isFired = true;
-		bullet->pos = pos;
+
+		int pos = getPos();
+		bullet->setPos(pos);
 		if (pos < enemy_pos) {
-			bullet->pos += (int)strlen(shape) - 1;
-			strcpy(bullet->shape, "-->");
+			bullet->setPos( bullet->getPos() + (int)strlen(getShape()) - 1);
+			bullet->setShape("-->");
 			bullet->direction = 0;
 		}
 		else {
-			strcpy(bullet->shape, "<--");
+			bullet->setShape("<--");
 			bullet->direction = 1;
 		}
 	}
@@ -235,7 +251,7 @@ int main()
 			case ' ':
 				bullet = findUnusedBullet(bullets, maxCount);
 				if (bullet == nullptr) break;				
-				player.fire(enemy.pos, bullet);
+				player.fire(enemy.getPos(), bullet);
 				break;
 			case 'w':
 				enemy.moveRight();
@@ -248,7 +264,7 @@ int main()
 		for (int i = 0; i < maxCount; i++)
 		{
 			if (bullets[i].isFired == false) continue;
-			bullets[i].update(enemy.pos, enemy.shape);
+			bullets[i].update(enemy.getPos(), enemy.getShape());
 		}
 		
 		// draw game objects to a canvas (player, enemy ...)

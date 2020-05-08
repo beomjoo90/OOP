@@ -90,26 +90,6 @@ struct Enemy : public GameObject {
 		: GameObject(rand() % (maxCount - (int)strlen(shape)), shape )
 	{	
 	}
-
-	bool isInside(int length)
-	{
-		return GameObject::isInside(length);
-	}
-
-	void moveRight()
-	{
-		GameObject::moveRight();
-	}
-
-	void moveLeft()
-	{
-		GameObject::moveLeft();
-	}
-
-	void draw(char* canvas, int maxCount)
-	{
-		GameObject::draw(canvas, maxCount);
-	}
 };
 
 struct Bullet : public GameObject {
@@ -120,22 +100,7 @@ struct Bullet : public GameObject {
 		: GameObject(-1, shape), isFired(false), direction(0)
 	{
 	}
-	
-	bool isInside(int length)
-	{
-		return GameObject::isInside(length);
-	}
-
-	void moveRight()
-	{
-		GameObject::moveRight();
-	}
-
-	void moveLeft()
-	{
-		GameObject::moveLeft();
-	}
-
+		
 	void update(int enemy_pos, const char* enemy_shape)
 	{
 		if (isFired == false) return;
@@ -167,12 +132,7 @@ struct Player : public GameObject {
 		: GameObject(rand() % (maxCount - strlen(shape)), shape)
 	{	
 	}
-
-	bool isInside(int length)
-	{
-		return GameObject::isInside(length);
-	}
-
+	
 	void fire(int enemy_pos, Bullet* bullet)
 	{
 		if (bullet == nullptr) return;
@@ -192,23 +152,7 @@ struct Player : public GameObject {
 			bullet->direction = 1;
 		}
 	}
-
-	void moveRight()
-	{
-		GameObject::moveRight();
-	}
-
-	void moveLeft()
-	{
-		GameObject::moveLeft();
-	}
-
-	void draw(char* canvas, int maxCount)
-	{
-		GameObject::draw(canvas, maxCount);
-	}
 };
-
 
 Bullet* findUnusedBullet(Bullet bullets[], int maxBullets)
 {

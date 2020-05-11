@@ -9,27 +9,48 @@
 #include <conio.h>
 #include <Windows.h>
 #include <ctime>
+#include <cstdlib> // include malloc,
 
 
 // commit practice
 // 커밋 연습
 
-void printSpaces(int i)
-{
-	for (int j = 0; j < i; j++)
-		printf(" ");
-}
+struct Screen {
+	int		len;
+	char*	canvas;
 
-void clear(char* canvas, int length)
-{
-	memset(canvas, ' ', length);
-	canvas[length] = '\0';
-}
+	Screen(int maxCount = 95) 
+		: len(maxCount+1), canvas{ (char*) malloc(sizeof(char)*(maxCount+1))}
+	{
+	}
 
-void render(const char* canvas, int lastPosition)
-{
-	printf("%s\r", canvas);
-}
+	// 소멸자, destructor
+	~Screen()
+	{
+		free((void *)canvas);
+		canvas = nullptr;
+		len = 0;
+	}
+
+	int length() { return len-1; }
+
+	void clear()
+	{
+		memset(canvas, ' ', len-1);
+		canvas[len-1] = '\0';
+	}
+
+	void render()
+	{
+		printf("%s\r", canvas);
+	}
+
+	void draw(const char* shape, int pos)
+	{
+		strncpy(&canvas[pos], shape, strlen(shape));
+	}
+
+};
 
 struct GameObject {
 	int		pos;
@@ -76,12 +97,11 @@ struct GameObject {
 		pos--;
 	}
 
-	void draw(char* canvas, int maxCount)
+	void draw(Screen& screen)
 	{
-		if (isInside(maxCount) == false) return;
-		strncpy(&canvas[pos], shape, strlen(shape));
+		if (isInside(screen.length()) == false) return;
+		screen.draw(shape, pos);
 	}
-
 };
 
 struct Enemy : public GameObject {
@@ -100,28 +120,46 @@ struct Bullet : public GameObject {
 		: GameObject(-1, shape), isFired(false), direction(0)
 	{
 	}
+
+	bool checkFire() 
+	{
+		return isFired == true;
+	}
+	void setFire()
+	{
+		isFired = true;
+	}
+	void resetFire()
+	{
+		isFired = false;
+	}
+
+	void makeDirectionLeft() { direction = 1; }
+	void makeDirectionRight() { direction = 0; }
+	bool isDirectionRight() { return direction == 0; }
+
 		
 	void update(int enemy_pos, const char* enemy_shape)
 	{
-		if (isFired == false) return;
+		if (checkFire() == false) return;
 
-		if (direction == 0)
+		if (isDirectionRight())
 			moveRight();
 		else moveLeft();
 
 		int pos = getPos();
-		if ((direction == 0 && enemy_pos <= pos)
-			|| (direction == 1 && pos < enemy_pos + strlen(enemy_shape)))
+		if ((isDirectionRight() && enemy_pos <= pos)
+			|| (!isDirectionRight() && pos < enemy_pos + strlen(enemy_shape)))
 		{
-			isFired = false;
+			resetFire();
 		}
 		
 	}
 
-	void draw(char* canvas, int maxCount)
+	void draw(Screen& screen)
 	{
-		if (isFired == false) return;
-		GameObject::draw(canvas, maxCount);
+		if (checkFire() == false) return;
+		GameObject::draw(screen);
 	}
 }; // 구조체 Bullet 정의
 
@@ -133,23 +171,20 @@ struct Player : public GameObject {
 	{	
 	}
 	
-	void fire(int enemy_pos, Bullet* bullet)
+	void fire(int enemy_pos, Bullet& bullet)
 	{
-		if (bullet == nullptr) return;
-		if (bullet->isFired == true) return;
-
-		bullet->isFired = true;
-
+		if (bullet.checkFire()) return;
+		bullet.setFire();
 		int pos = getPos();
-		bullet->setPos(pos);
+		bullet.setPos(pos);
 		if (pos < enemy_pos) {
-			bullet->setPos( bullet->getPos() + (int)strlen(getShape()) - 1);
-			bullet->setShape("-->");
-			bullet->direction = 0;
+			bullet.setPos( bullet.getPos() + (int)strlen(getShape()) - 1);
+			bullet.setShape("-->");
+			bullet.makeDirectionRight();
 		}
 		else {
-			bullet->setShape("<--");
-			bullet->direction = 1;
+			bullet.setShape("<--");
+			bullet.makeDirectionLeft();
 		}
 	}
 };
@@ -158,7 +193,7 @@ Bullet* findUnusedBullet(Bullet bullets[], int maxBullets)
 {
 	for (int i = 0; i < maxBullets; i++)
 	{
-		if (bullets[i].isFired == true) continue;		
+		if (bullets[i].checkFire()) continue;		
 		return &bullets[i];
 	}
 	return nullptr;
@@ -166,15 +201,15 @@ Bullet* findUnusedBullet(Bullet bullets[], int maxBullets)
 
 int main()
 {
-	const int maxCount = 80;
-	char canvas[maxCount + 1];
+	Screen screen;
+	int maxCount = screen.length();
 	Player	player{ "(o_o)", maxCount };
 	Enemy   enemy{ "(*___*)", maxCount };
-	Bullet	bullets[maxCount];
-
+	Bullet* bullets = (Bullet *)malloc(sizeof(Bullet)*maxCount);
+	
 	while (true)		
 	{
-		clear(canvas, maxCount);
+		screen.clear();
 				
 		// update game objects (player, enemy ...)
 		if (player.isInside(maxCount) == false || enemy.isInside(maxCount) == false)
@@ -195,7 +230,7 @@ int main()
 			case ' ':
 				bullet = findUnusedBullet(bullets, maxCount);
 				if (bullet == nullptr) break;				
-				player.fire(enemy.getPos(), bullet);
+				player.fire(enemy.getPos(), *bullet);
 				break;
 			case 'w':
 				enemy.moveRight();
@@ -207,23 +242,25 @@ int main()
 		}
 		for (int i = 0; i < maxCount; i++)
 		{
-			if (bullets[i].isFired == false) continue;
+			if (bullets[i].checkFire() == false) continue;
 			bullets[i].update(enemy.getPos(), enemy.getShape());
 		}
 		
 		// draw game objects to a canvas (player, enemy ...)
-		player.draw(canvas, maxCount);
-		enemy.draw(canvas, maxCount);
+		player.draw(screen);
+		enemy.draw(screen);
 		for (int i = 0; i < maxCount; i++)
 		{
-			if (bullets[i].isFired == false) continue;
-			bullets[i].draw(canvas, maxCount);
+			if (bullets[i].checkFire() == false) continue;
+			bullets[i].draw(screen);
 		}
 		
 		// display canvas to a monitor
-		render(canvas, maxCount);		
+		screen.render();
 		Sleep(100);
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
+
+	free((void *)bullets);
 	return 0;
 }

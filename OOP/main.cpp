@@ -62,10 +62,12 @@ struct GameObject {
 		setShape(shape);
 	}
 
-	//getter 게터
-	int getPos() { return pos; }
-	const char* getShape() { return shape; }
+	virtual ~GameObject() {} // 가상 소멸자 함수
 
+	//getter 게터
+	int getPos() const { return pos; }
+	const char* getShape() const { return shape; }
+	
 	//setter 세터
 	void setPos(int pos) { this->pos = pos;  }
 	void setShape(const char* shape) 
@@ -82,13 +84,12 @@ struct GameObject {
 	}
 
 
-	bool isInside(int length)
+	bool isInside(int length) const
 	{
 		return pos <= (length - strlen(shape)) && pos >= 0;
 	}
 
-	void moveRight()
-	{
+	void moveRight() {
 		pos++;
 	}
 
@@ -97,7 +98,9 @@ struct GameObject {
 		pos--;
 	}
 
-	void draw(Screen& screen)
+	virtual void update(int enemy_pos, const char* enemy_shape) {}
+
+	virtual void draw(Screen& screen)
 	{
 		if (isInside(screen.length()) == false) return;
 		screen.draw(shape, pos);
@@ -138,7 +141,7 @@ struct Bullet : public GameObject {
 	void makeDirectionRight() { direction = 0; }
 	bool isDirectionRight() { return direction == 0; }
 
-		
+	//overriding
 	void update(int enemy_pos, const char* enemy_shape)
 	{
 		if (checkFire() == false) return;
@@ -156,6 +159,7 @@ struct Bullet : public GameObject {
 		
 	}
 
+	//overriding
 	void draw(Screen& screen)
 	{
 		if (checkFire() == false) return;
@@ -189,12 +193,12 @@ struct Player : public GameObject {
 	}
 };
 
-Bullet* findUnusedBullet(Bullet bullets[], int maxBullets)
+Bullet* findUnusedBullet(Bullet** bullets, int maxBullets)
 {
 	for (int i = 0; i < maxBullets; i++)
 	{
-		if (bullets[i].checkFire()) continue;		
-		return &bullets[i];
+		if (bullets[i]->checkFire()) continue;		
+		return bullets[i];
 	}
 	return nullptr;
 }
@@ -205,12 +209,24 @@ int main()
 	int maxCount = screen.length();
 	Player	player{ "(o_o)", maxCount };
 	Enemy   enemy{ "(*___*)", maxCount };
-	Bullet* bullets = (Bullet *)malloc(sizeof(Bullet)*maxCount);
+	Bullet** bullets = (Bullet**)malloc(sizeof(Bullet*)*maxCount);
+	for (int i = 0; i < maxCount; i++)
+	{
+		bullets[i] = new Bullet();
+	}
+
+	GameObject** gos = (GameObject**)malloc(sizeof(GameObject*)*(maxCount + 2));
+	for (int i = 0; i < maxCount; i++)
+	{
+		gos[i] = bullets[i];
+	}
+	gos[maxCount] = &player;
+	gos[maxCount + 1] = &enemy;
 	
 	while (true)		
 	{
 		screen.clear();
-				
+		
 		// update game objects (player, enemy ...)
 		if (player.isInside(maxCount) == false || enemy.isInside(maxCount) == false)
 			break; // check game loop termination condition
@@ -240,20 +256,17 @@ int main()
 				break;
 			}
 		}
-		for (int i = 0; i < maxCount; i++)
+		for (int i = 0; i < maxCount + 2; i++)
 		{
-			if (bullets[i].checkFire() == false) continue;
-			bullets[i].update(enemy.getPos(), enemy.getShape());
+			gos[i]->update(enemy.getPos(), enemy.getShape());
+		}
+
+
+		for (int i = 0; i < maxCount + 2; i++)
+		{
+			gos[i]->draw(screen);
 		}
 		
-		// draw game objects to a canvas (player, enemy ...)
-		player.draw(screen);
-		enemy.draw(screen);
-		for (int i = 0; i < maxCount; i++)
-		{
-			if (bullets[i].checkFire() == false) continue;
-			bullets[i].draw(screen);
-		}
 		
 		// display canvas to a monitor
 		screen.render();
@@ -261,6 +274,12 @@ int main()
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
 
+	for (int i = 0; i < maxCount; i++)
+	{
+		if (bullets[i] != nullptr)
+			delete bullets[i];
+		bullets[i] = nullptr;
+	}
 	free((void *)bullets);
 	return 0;
 }

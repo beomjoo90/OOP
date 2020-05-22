@@ -19,7 +19,7 @@ struct Screen {
 	int		len;
 	char*	canvas;
 
-	Screen(int maxCount = 95) 
+	Screen(int maxCount = 80) 
 		: len(maxCount+1), canvas{ (char*) malloc(sizeof(char)*(maxCount+1))}
 	{
 	}
@@ -113,6 +113,9 @@ struct Enemy : public GameObject {
 		: GameObject(rand() % (maxCount - (int)strlen(shape)), shape )
 	{	
 	}
+	~Enemy() {
+		int a = 10;
+	}
 };
 
 struct Bullet : public GameObject {
@@ -123,6 +126,8 @@ struct Bullet : public GameObject {
 		: GameObject(-1, shape), isFired(false), direction(0)
 	{
 	}
+
+	~Bullet() {}
 
 	bool checkFire() 
 	{
@@ -174,6 +179,8 @@ struct Player : public GameObject {
 		: GameObject(rand() % (maxCount - strlen(shape)), shape)
 	{	
 	}
+
+	~Player() {}
 	
 	void fire(int enemy_pos, Bullet& bullet)
 	{
@@ -207,8 +214,8 @@ int main()
 {
 	Screen screen;
 	int maxCount = screen.length();
-	Player	player{ "(o_o)", maxCount };
-	Enemy   enemy{ "(*___*)", maxCount };
+	Player* player = new Player{ "(o_o)", maxCount };
+	Enemy* enemy = new Enemy{ "(*___*)", maxCount };
 	Bullet** bullets = (Bullet**)malloc(sizeof(Bullet*)*maxCount);
 	for (int i = 0; i < maxCount; i++)
 	{
@@ -220,15 +227,16 @@ int main()
 	{
 		gos[i] = bullets[i];
 	}
-	gos[maxCount] = &player;
-	gos[maxCount + 1] = &enemy;
+	gos[maxCount] = player;
+	gos[maxCount + 1] = enemy;
 	
-	while (true)		
+	bool requestExit = false;
+	while (requestExit == false)		
 	{
 		screen.clear();
 		
 		// update game objects (player, enemy ...)
-		if (player.isInside(maxCount) == false || enemy.isInside(maxCount) == false)
+		if (player->isInside(maxCount) == false || enemy->isInside(maxCount) == false)
 			break; // check game loop termination condition
 
 		if (_kbhit()) {
@@ -238,27 +246,30 @@ int main()
 			//printf("\n%c %d\n", key, key);
 			switch (key) {
 			case 'a':
-				player.moveLeft();
+				player->moveLeft();
 				break;
 			case 'd':
-				player.moveRight();
+				player->moveRight();
 				break;
 			case ' ':
 				bullet = findUnusedBullet(bullets, maxCount);
 				if (bullet == nullptr) break;				
-				player.fire(enemy.getPos(), *bullet);
+				player->fire(enemy->getPos(), *bullet);
 				break;
 			case 'w':
-				enemy.moveRight();
+				enemy->moveRight();
 				break;
 			case 's':
-				enemy.moveLeft();
+				enemy->moveLeft();
+				break;
+			case 'z':
+				requestExit = true;
 				break;
 			}
 		}
 		for (int i = 0; i < maxCount + 2; i++)
 		{
-			gos[i]->update(enemy.getPos(), enemy.getShape());
+			gos[i]->update(enemy->getPos(), enemy->getShape());
 		}
 
 
@@ -274,12 +285,13 @@ int main()
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
 
-	for (int i = 0; i < maxCount; i++)
+	for (int i = 0; i < maxCount + 2; i++)
 	{
-		if (bullets[i] != nullptr)
-			delete bullets[i];
-		bullets[i] = nullptr;
+		if (gos[i] != nullptr)
+			delete gos[i];
+		gos[i] = nullptr;
 	}
 	free((void *)bullets);
+	free((void *)gos);
 	return 0;
 }

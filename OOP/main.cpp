@@ -175,8 +175,9 @@ public:
 	}
 }; // 구조체 Bullet 정의
 
-struct Player : public GameObject {
+class Player : public GameObject {
 	
+public:
 	// constructor 생성자
 	Player(const char* shape, int maxCount)
 		: GameObject(rand() % (maxCount - strlen(shape)), shape)

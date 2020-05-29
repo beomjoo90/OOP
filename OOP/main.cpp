@@ -15,10 +15,11 @@
 // commit practice
 // Ä¿¹Ô ¿¬½À
 
-struct Screen {
+class Screen {
 	int		len;
 	char*	canvas;
 
+public:
 	Screen(int maxCount = 80) 
 		: len(maxCount+1), canvas{ (char*) malloc(sizeof(char)*(maxCount+1))}
 	{
@@ -52,10 +53,11 @@ struct Screen {
 
 };
 
-struct GameObject {
+class GameObject {
 	int		pos;
 	char	shape[100]; // 0 ... 99
 
+public:
 	GameObject(int pos, const char* shape)
 		: pos(pos)
 	{
@@ -107,21 +109,22 @@ struct GameObject {
 	}
 };
 
-struct Enemy : public GameObject {
+class Enemy : public GameObject {
 	
+public:
 	Enemy(const char* shape, int maxCount)
 		: GameObject(rand() % (maxCount - (int)strlen(shape)), shape )
-	{	
-	}
+	{}
 	~Enemy() {
 		int a = 10;
 	}
 };
 
-struct Bullet : public GameObject {
+class Bullet : public GameObject {
 	bool	isFired;
 	int		direction;
 			
+public:
 	Bullet(const char* shape = "")
 		: GameObject(-1, shape), isFired(false), direction(0)
 	{

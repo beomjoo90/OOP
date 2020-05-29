@@ -53,6 +53,8 @@ public:
 
 };
 
+class Enemy; // forward declaration
+
 class GameObject {
 	int		pos;
 	char	shape[100]; // 0 ... 99
@@ -100,7 +102,7 @@ public:
 		pos--;
 	}
 
-	virtual void update(int enemy_pos, const char* enemy_shape) {}
+	virtual void update(Enemy* enemy) {}
 
 	virtual void draw(Screen& screen)
 	{
@@ -118,6 +120,43 @@ public:
 	~Enemy() {
 		int a = 10;
 	}
+};
+
+class BlinkableEnemy : public Enemy {
+	bool isBlinking;
+	int count;
+
+public:
+	BlinkableEnemy(const char* shape, int maxCount)
+		: Enemy(shape, maxCount), isBlinking(false), count(0)
+	{}
+
+	void setBlinking() { 
+		isBlinking = true;
+		count = 10;
+	}
+
+	// overriding
+	void update(Enemy* enemy)
+	{
+		if (isBlinking == true) {
+			count--;
+			if (count == 0) {
+				isBlinking = false;
+			}
+		}
+	}
+
+	// overriding
+	void draw(Screen& screen)
+	{
+		if (isBlinking == false) {
+			GameObject::draw(screen);
+			return;
+		}
+		if (count % 2 == 0) GameObject::draw(screen);
+	}
+
 };
 
 class Bullet : public GameObject {
@@ -150,7 +189,7 @@ public:
 	bool isDirectionRight() { return direction == 0; }
 
 	//overriding
-	void update(int enemy_pos, const char* enemy_shape)
+	void update(Enemy* enemy)
 	{
 		if (checkFire() == false) return;
 
@@ -159,9 +198,16 @@ public:
 		else moveLeft();
 
 		int pos = getPos();
+		int enemy_pos = enemy->getPos();
+		const char* enemy_shape = enemy->getShape();
 		if ((isDirectionRight() && enemy_pos <= pos)
-			|| (!isDirectionRight() && pos < enemy_pos + strlen(enemy_shape)))
+			|| (!isDirectionRight() && pos <= enemy_pos + strlen(enemy_shape)))
 		{
+			if (isDirectionRight() && enemy_pos == pos ||
+				!isDirectionRight() && pos == enemy_pos + strlen(enemy_shape)) {
+				BlinkableEnemy* be = dynamic_cast<BlinkableEnemy *>(enemy);
+				if (be != nullptr) be->setBlinking();
+			}
 			resetFire();
 		}
 		
@@ -219,7 +265,7 @@ int main()
 	Screen screen;
 	int maxCount = screen.length();
 	Player* player = new Player{ "(o_o)", maxCount };
-	Enemy* enemy = new Enemy{ "(*___*)", maxCount };
+	Enemy* enemy = new BlinkableEnemy{ "(*_______*)", maxCount };
 	Bullet** bullets = (Bullet**)malloc(sizeof(Bullet*)*maxCount);
 	for (int i = 0; i < maxCount; i++)
 	{
@@ -273,7 +319,7 @@ int main()
 		}
 		for (int i = 0; i < maxCount + 2; i++)
 		{
-			gos[i]->update(enemy->getPos(), enemy->getShape());
+			gos[i]->update(enemy);
 		}
 
 

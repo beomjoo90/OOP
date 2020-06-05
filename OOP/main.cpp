@@ -59,12 +59,12 @@ class GameObject; // forward declaration
 class GameObject {
 	int		pos;
 	char	shape[100]; // 0 ... 99
-	GameObject** gos;
-	int     maxGameObjects;
+	static GameObject** gos;
+	static int     maxGameObjects;
 
 public:
-	GameObject(GameObject** gos, int maxGameObjects, int pos, const char* shape)
-		: gos(gos), maxGameObjects(maxGameObjects), pos(pos)
+	GameObject(int pos, const char* shape)
+		: pos(pos)
 	{
 		setShape(shape);
 	}
@@ -74,8 +74,9 @@ public:
 	//getter 게터
 	int getPos() const { return pos; }
 	const char* getShape() const { return shape; }
-	GameObject** getGameObjects() { return gos; }
-	int getMaxGameObjects() { return maxGameObjects; }
+
+	static GameObject** getGameObjects();
+	static int getMaxGameObjects();
 	
 	//setter 세터
 	void setPos(int pos) { this->pos = pos;  }
@@ -121,8 +122,8 @@ public:
 class Enemy : public GameObject {
 	
 public:
-	Enemy(GameObject** gos, int maxGameObjects, const char* shape, int maxCount)
-		: GameObject(gos, maxGameObjects, rand() % (maxCount - (int)strlen(shape)), shape )
+	Enemy(const char* shape, int maxCount)
+		: GameObject(rand() % (maxCount - (int)strlen(shape)), shape )
 	{}
 	~Enemy() {
 		int a = 10;
@@ -143,8 +144,8 @@ class BlinkableEnemy : public Enemy {
 	int count;
 
 public:
-	BlinkableEnemy(GameObject** gos, int maxGameObjects, const char* shape, int maxCount)
-		: Enemy(gos, maxGameObjects, shape, maxCount), isBlinking(false), count(0)
+	BlinkableEnemy(const char* shape, int maxCount)
+		: Enemy(shape, maxCount), isBlinking(false), count(0)
 	{}
 
 	void setBlinking() { 
@@ -189,8 +190,8 @@ class Bullet : public GameObject {
 	int		direction;
 			
 public:
-	Bullet(GameObject** gos, int maxGameObjects, const char* shape = "")
-		: GameObject(gos, maxGameObjects, -1, shape), isFired(false), direction(0)
+	Bullet(const char* shape = "")
+		: GameObject(-1, shape), isFired(false), direction(0)
 	{
 	}
 
@@ -322,8 +323,8 @@ class Player : public GameObject {
 
 public:
 	// constructor 생성자
-	Player(GameObject** gos, int maxGameObjects, const char* shape, int maxCount)
-		: GameObject(gos, maxGameObjects, rand() % (maxCount - strlen(shape)), shape)
+	Player(const char* shape, int maxCount)
+		: GameObject(rand() % (maxCount - strlen(shape)), shape)
 	{	
 	}
 
@@ -346,20 +347,25 @@ public:
 	
 };
 
+int GameObject::maxGameObjects = 80 + 2;
+GameObject** GameObject::gos = (GameObject**)malloc(sizeof(GameObject*)*GameObject::maxGameObjects);
 
+int GameObject::getMaxGameObjects() { return maxGameObjects; }
+GameObject** GameObject::getGameObjects() { return gos; }
 
 int main()
 {
-	Screen screen;
-	int maxCount = screen.length();	
-	int maxGameObjects = maxCount + 2;
-	GameObject** gos = (GameObject**)malloc(sizeof(GameObject*)*maxGameObjects);	
+	Screen screen{ 100 };
+	int maxCount = screen.length();
+	GameObject** gos = GameObject::getGameObjects();
+	int maxGameObjects = GameObject::getMaxGameObjects();
+	
+	gos[0] = new Enemy{ "(*_*)", maxCount };	
+	gos[1] = new Player{ "(o_o)", maxCount };
 	for (int i = 0; i < maxCount; i++)
 	{
-		gos[i] = new Bullet{ gos, maxGameObjects };
+		gos[i + 2] = new Bullet{};
 	}
-	gos[maxCount] = new Player{ gos, maxGameObjects, "(o_o)", maxCount };
-	gos[maxCount + 1] = new BlinkableEnemy{ gos, maxGameObjects, "(*_*)", maxCount };
 	
 	bool requestExit = false;
 	while (requestExit == false)		

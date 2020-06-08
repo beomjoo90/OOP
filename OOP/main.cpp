@@ -56,11 +56,72 @@ public:
 class Enemy; // forward declaration
 class GameObject; // forward declaration
 
+class GameObjectManager {
+	GameObject** gos;
+	int          capacity;
+
+public:
+	GameObjectManager(int capacity = 20) 
+		: capacity{ capacity }, gos{ (GameObject**)malloc(sizeof(GameObject*)*capacity) }
+	{
+		for (int i = 0; i < capacity; i++)
+			gos[i] = (GameObject*)nullptr;
+	}
+	~GameObjectManager() {
+	
+		for (int i = 0; i < capacity; i++)
+		{
+			if (gos[i] == nullptr) continue;
+			delete gos[i];
+			gos[i] = (GameObject*)nullptr;
+		}
+		free(gos);
+		gos = (GameObject**)nullptr;
+		capacity = 0;
+	}
+
+	void add(GameObject* obj)
+	{
+		if (obj == nullptr) return;
+		// obj != nullptr
+		for (int i = 0; i < capacity; i++)
+		{
+			if (gos[i] != nullptr) continue;
+			// gos[i] == nullptr
+			gos[i] = obj;
+			return;
+		}
+		// i == capacity
+		gos = (GameObject**)realloc(gos, sizeof(GameObject*) * 2 * capacity);
+		for (int i = capacity; i < 2 * capacity; i++)
+		{
+			gos[i] = nullptr;
+		}
+		gos[capacity] = obj;
+		capacity *= 2;
+	}
+
+	void remove(GameObject* obj)
+	{
+		if (obj == nullptr) return;
+		for (int i = 0; i < capacity; i++)
+		{
+			if (gos[i] == obj) {
+				delete gos[i];
+				gos[i] = nullptr;
+				return;
+			}
+		}
+	}
+
+	GameObject** getGameObjects() { return gos; }
+	int getCapacity() { return capacity; }
+};
+
 class GameObject {
 	int		pos;
 	char	shape[100]; // 0 ... 99
-	static GameObject** gos;
-	static int     maxGameObjects;
+	static  GameObjectManager gameObjectManager;
 
 public:
 	GameObject(int pos, const char* shape)
@@ -75,8 +136,11 @@ public:
 	int getPos() const { return pos; }
 	const char* getShape() const { return shape; }
 
-	static GameObject** getGameObjects();
-	static int getMaxGameObjects();
+	static GameObject** getGameObjects() { return gameObjectManager.getGameObjects(); }
+	static int getMaxGameObjects() { return gameObjectManager.getCapacity(); }
+
+	static void addGameObject(GameObject* obj) { gameObjectManager.add(obj); }
+	static void removeGameObject(GameObject* obj) { gameObjectManager.remove(obj); }
 	
 	//setter 세터
 	void setPos(int pos) { this->pos = pos;  }
@@ -289,7 +353,11 @@ class Player : public GameObject {
 	void fire()
 	{
 		Bullet* bullet = findUnusedBullet();
-		if (bullet == nullptr) return;
+		if (bullet == nullptr) {
+			bullet = new Bullet;
+			GameObject::addGameObject(bullet);
+		}
+		// bullet != nullptr
 
 		// bullet != nullptr && bullet->checkFire() == false
 		Enemy* enemy = nullptr;
@@ -347,34 +415,27 @@ public:
 	
 };
 
-int GameObject::maxGameObjects = 80 + 2;
-GameObject** GameObject::gos = (GameObject**)malloc(sizeof(GameObject*)*GameObject::maxGameObjects);
-
-int GameObject::getMaxGameObjects() { return maxGameObjects; }
-GameObject** GameObject::getGameObjects() { return gos; }
+GameObjectManager GameObject::gameObjectManager{1};
 
 int main()
 {
-	Screen screen{ 100 };
+	Screen screen{ 80 };
 	int maxCount = screen.length();
-	GameObject** gos = GameObject::getGameObjects();
-	int maxGameObjects = GameObject::getMaxGameObjects();
 	
-	gos[0] = new Enemy{ "(*_*)", maxCount };	
-	gos[1] = new Player{ "(o_o)", maxCount };
-	for (int i = 0; i < maxCount; i++)
-	{
-		gos[i + 2] = new Bullet{};
-	}
+	GameObject::addGameObject(new Enemy{ "(*_*)", maxCount });
+	GameObject::addGameObject(new Player{ "(o_o)", maxCount });
+			
 	
 	bool requestExit = false;
 	while (requestExit == false)		
 	{
 		screen.clear();
-		
+		GameObject** gos = GameObject::getGameObjects();
+		int capacity = GameObject::getMaxGameObjects();
+
 		// update game objects (player, enemy ...)
 		// gos, maxGameObjects
-		for (int i = 0; i < maxGameObjects; i++)
+		for (int i = 0; i < capacity; i++)
 		{	
 			GameObject* obj = gos[i];
 			if (obj == nullptr) continue;			
@@ -397,20 +458,40 @@ int main()
 			if (key == 'z') {
 				break; // exit from main loop
 			}
+			if (key == 'i') {
+				int nEnemies = 0;
+				int nPlayers = 0;
+				int nBullets = 0;
+				for (int i = 0; i < capacity; i++)
+				{
+					if (gos[i] == nullptr) continue;
+					if (dynamic_cast<Enemy*>(gos[i])) nEnemies++;
+					if (dynamic_cast<Player*>(gos[i])) nPlayers++;
+					if (dynamic_cast<Bullet*>(gos[i])) nBullets++;
+				}
+				printf("total = %3d, enemies = %3d, players = %3d, bullets = %3d\r", capacity, nEnemies, nPlayers, nBullets);
+				Sleep(3000);
+				continue;
+			}
 
-			for (int i = 0; i < maxGameObjects; i++)
+			for (int i = 0; i < capacity; i++)
 			{
+				if (gos[i] == nullptr) continue;
 				gos[i]->process_input(key);
 			}
 		}
-		for (int i = 0; i < maxGameObjects; i++)
+		gos = GameObject::getGameObjects();
+		capacity = GameObject::getMaxGameObjects();
+		for (int i = 0; i < capacity; i++)
 		{
+			if (gos[i] == nullptr) continue;
 			gos[i]->update();
 		}
 
 
-		for (int i = 0; i < maxGameObjects; i++)
+		for (int i = 0; i < capacity; i++)
 		{
+			if (gos[i] == nullptr) continue;
 			gos[i]->draw(screen);
 		}
 		
@@ -420,13 +501,5 @@ int main()
 		Sleep(100);
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
-
-	for (int i = 0; i < maxGameObjects; i++)
-	{
-		if (gos[i] != nullptr)
-			delete gos[i];
-		gos[i] = nullptr;
-	}
-	free((void *)gos);
 	return 0;
 }

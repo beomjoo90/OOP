@@ -107,7 +107,6 @@ public:
 		for (int i = 0; i < capacity; i++)
 		{
 			if (gos[i] == obj) {
-				delete gos[i];
 				gos[i] = nullptr;
 				return;
 			}
@@ -122,12 +121,14 @@ class GameObject {
 	int		pos;
 	char	shape[100]; // 0 ... 99
 	static  GameObjectManager gameObjectManager;
+	Screen& screen;
 
 public:
-	GameObject(int pos, const char* shape)
-		: pos(pos)
+	GameObject(Screen& screen, int pos, const char* shape)
+		: screen(screen), pos(pos)
 	{
 		setShape(shape);
+		gameObjectManager.add(this);
 	}
 
 	virtual ~GameObject() {} // 가상 소멸자 함수
@@ -135,12 +136,10 @@ public:
 	//getter 게터
 	int getPos() const { return pos; }
 	const char* getShape() const { return shape; }
+	Screen& getScreen() const { return screen;  }
 
 	static GameObject** getGameObjects() { return gameObjectManager.getGameObjects(); }
 	static int getMaxGameObjects() { return gameObjectManager.getCapacity(); }
-
-	static void addGameObject(GameObject* obj) { gameObjectManager.add(obj); }
-	static void removeGameObject(GameObject* obj) { gameObjectManager.remove(obj); }
 	
 	//setter 세터
 	void setPos(int pos) { this->pos = pos;  }
@@ -158,9 +157,9 @@ public:
 	}
 
 
-	bool isInside(int length) const
+	bool isInside() const
 	{
-		return pos <= (length - strlen(shape)) && pos >= 0;
+		return pos <= (screen.length() - strlen(shape)) && pos >= 0;
 	}
 
 	void moveRight() {
@@ -176,9 +175,9 @@ public:
 
 	virtual void update() {}
 
-	virtual void draw(Screen& screen)
+	virtual void draw()
 	{
-		if (isInside(screen.length()) == false) return;
+		if (isInside() == false) return;
 		screen.draw(shape, pos);
 	}
 };
@@ -186,12 +185,10 @@ public:
 class Enemy : public GameObject {
 	
 public:
-	Enemy(const char* shape, int maxCount)
-		: GameObject(rand() % (maxCount - (int)strlen(shape)), shape )
+	Enemy(Screen& screen, const char* shape)
+		: GameObject(screen, rand() % (screen.length() - (int)strlen(shape)), shape )
 	{}
-	~Enemy() {
-		int a = 10;
-	}
+	~Enemy() {}
 
 	// overriding : 재정의
 	void process_input(int key)
@@ -208,8 +205,8 @@ class BlinkableEnemy : public Enemy {
 	int count;
 
 public:
-	BlinkableEnemy(const char* shape, int maxCount)
-		: Enemy(shape, maxCount), isBlinking(false), count(0)
+	BlinkableEnemy(Screen& screen, const char* shape)
+		: Enemy(screen, shape), isBlinking(false), count(0)
 	{}
 
 	void setBlinking() { 
@@ -238,13 +235,13 @@ public:
 	}
 
 	// overriding
-	void draw(Screen& screen)
+	void draw()
 	{
 		if (isBlinking == false) {
-			GameObject::draw(screen);
+			GameObject::draw();
 			return;
 		}
-		if (count % 2 == 0) GameObject::draw(screen);
+		if (count % 2 == 0) GameObject::draw();
 	}
 
 };
@@ -254,10 +251,9 @@ class Bullet : public GameObject {
 	int		direction;
 			
 public:
-	Bullet(const char* shape = "")
-		: GameObject(-1, shape), isFired(false), direction(0)
-	{
-	}
+	Bullet(Screen& screen, const char* shape = "")
+		: GameObject(screen, -1, shape), isFired(false), direction(0)
+	{}
 
 	~Bullet() {}
 
@@ -319,10 +315,10 @@ public:
 	}
 
 	//overriding
-	void draw(Screen& screen)
+	void draw()
 	{
 		if (checkFire() == false) return;
-		GameObject::draw(screen);
+		GameObject::draw();
 	}
 }; // 구조체 Bullet 정의
 
@@ -354,8 +350,7 @@ class Player : public GameObject {
 	{
 		Bullet* bullet = findUnusedBullet();
 		if (bullet == nullptr) {
-			bullet = new Bullet;
-			GameObject::addGameObject(bullet);
+			bullet = new Bullet{ getScreen() } ;
 		}
 		// bullet != nullptr
 
@@ -391,10 +386,9 @@ class Player : public GameObject {
 
 public:
 	// constructor 생성자
-	Player(const char* shape, int maxCount)
-		: GameObject(rand() % (maxCount - strlen(shape)), shape)
-	{	
-	}
+	Player(Screen& screen, const char* shape)
+		: GameObject(screen, rand() % (screen.length() - strlen(shape)), shape)
+	{}
 
 	~Player() {}
 
@@ -420,11 +414,10 @@ GameObjectManager GameObject::gameObjectManager{1};
 int main()
 {
 	Screen screen{ 80 };
-	int maxCount = screen.length();
-	
-	GameObject::addGameObject(new Enemy{ "(*_*)", maxCount });
-	GameObject::addGameObject(new Player{ "(o_o)", maxCount });
-			
+
+	new BlinkableEnemy{ screen, "(*_*)" };
+	new Enemy{ screen, "(+_+)" };
+	new Player{ screen, "(o_o)" };
 	
 	bool requestExit = false;
 	while (requestExit == false)		
@@ -445,7 +438,7 @@ int main()
 			Player* player = dynamic_cast<Player *>(obj); // dynamically downcast			
 			if (player != nullptr) {
 				// if player exists, check whether it is inside screen. otherwise, exit.
-				if (player->isInside(maxCount) == false) {
+				if (player->isInside() == false) {
 					requestExit = true;
 					break;
 				}
@@ -492,7 +485,7 @@ int main()
 		for (int i = 0; i < capacity; i++)
 		{
 			if (gos[i] == nullptr) continue;
-			gos[i]->draw(screen);
+			gos[i]->draw();
 		}
 		
 		

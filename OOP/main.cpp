@@ -15,6 +15,14 @@
 // commit practice
 // Ä¿¹Ô ¿¬½À
 
+class Screen;
+class GameObjectManager;
+class GameObject; // forward declaration
+class Enemy; // forward declaration
+class BlinkableEnemy;
+class Bullet;
+class Player;
+
 class Screen {
 	int		len;
 	char*	canvas;
@@ -52,9 +60,6 @@ public:
 	}
 
 };
-
-class Enemy; // forward declaration
-class GameObject; // forward declaration
 
 class GameObjectManager {
 	GameObject** gos;
@@ -198,6 +203,11 @@ public:
 		case 's': moveLeft(); break;
 		}
 	}
+
+	// overriding
+	void update();	
+
+	virtual void OnDamage() {}
 };
 
 class BlinkableEnemy : public Enemy {
@@ -226,12 +236,18 @@ public:
 	// overriding
 	void update()
 	{
+		Enemy::update();
 		if (isBlinking == true) {
 			count--;
 			if (count == 0) {
 				isBlinking = false;
 			}
 		}
+	}
+
+	void OnDamage()
+	{
+		setBlinking();
 	}
 
 	// overriding
@@ -249,7 +265,7 @@ public:
 class Bullet : public GameObject {
 	bool	isFired;
 	int		direction;
-			
+
 public:
 	Bullet(Screen& screen, const char* shape = "")
 		: GameObject(screen, -1, shape), isFired(false), direction(0)
@@ -257,7 +273,7 @@ public:
 
 	~Bullet() {}
 
-	bool checkFire() 
+	bool checkFire()
 	{
 		return isFired == true;
 	}
@@ -279,39 +295,14 @@ public:
 	{
 		if (checkFire() == false) return;
 
+		if (isInside() == false) {
+			resetFire();
+			return;
+		}
+
 		if (isDirectionRight())
 			moveRight();
 		else moveLeft();
-
-		// find enemy
-		Enemy* enemy = nullptr;
-		// find enemy from GameObjectArray (gos)
-
-		GameObject** gos = getGameObjects();
-		int maxGameObjects = getMaxGameObjects();
-		for (int i = 0; i < maxGameObjects; i++)
-		{
-			GameObject* obj = gos[i];
-			if (obj == nullptr) continue;
-			enemy = dynamic_cast<Enemy*>(obj);
-			if (enemy != nullptr) break;
-		}
-		// enemy == nullptr || enemy != nullptr
-		if (enemy == nullptr) return;
-
-		int pos = getPos();
-		int enemy_pos = enemy->getPos();
-		const char* enemy_shape = enemy->getShape();
-		if ((isDirectionRight() && enemy_pos <= pos)
-			|| (!isDirectionRight() && pos <= enemy_pos + strlen(enemy_shape)))
-		{
-			if (isDirectionRight() && enemy_pos == pos ||
-				!isDirectionRight() && pos == enemy_pos + strlen(enemy_shape)) {
-				BlinkableEnemy* be = dynamic_cast<BlinkableEnemy *>(enemy);
-				if (be != nullptr) be->setBlinking();
-			}
-			resetFire();
-		}		
 	}
 
 	//overriding
@@ -353,10 +344,14 @@ class Player : public GameObject {
 			bullet = new Bullet{ getScreen() } ;
 		}
 		// bullet != nullptr
+		int pos = getPos();
 
 		// bullet != nullptr && bullet->checkFire() == false
 		Enemy* enemy = nullptr;
-		// find enemy
+		Enemy* closest = nullptr;
+		int closestDistance = getScreen().length();
+
+		// find the closest enemy from game objects array.
 		GameObject** gos = getGameObjects();
 		int maxGameObjects = getMaxGameObjects();
 		for (int i = 0; i < maxGameObjects; i++)
@@ -364,23 +359,32 @@ class Player : public GameObject {
 			GameObject* obj = gos[i];
 			if (obj == nullptr) continue;
 			enemy = dynamic_cast<Enemy*>(obj);
-			if (enemy != nullptr) break;
-			
+			if (enemy == nullptr) continue;
+			int dist = abs(enemy->getPos() - pos);
+			if (closest == nullptr || (dist < closestDistance) ) {
+				closest = enemy;
+				closestDistance = dist;
+			}
 		}
-		if (enemy == nullptr) return;
-		//enemy != nullptr
-		int enemy_pos = enemy->getPos();
+
+		int enemy_pos = -1;
+		if (closest == nullptr) {
+			bool isLeft = rand() % 2 ? false : true;
+			enemy_pos = getScreen().length() - 1;
+			if (isLeft == true) enemy_pos = 0;
+		}
+		else {
+			enemy_pos = closest->getPos();
+		}
 		bullet->setFire();
-		int pos = getPos();
+		
 		bullet->setPos(pos);
+		bullet->setShape("<--");
+		bullet->makeDirectionLeft();
 		if (pos < enemy_pos) {
 			bullet->setPos(bullet->getPos() + (int)strlen(getShape()) - 1);
 			bullet->setShape("-->");
 			bullet->makeDirectionRight();
-		}
-		else {
-			bullet->setShape("<--");
-			bullet->makeDirectionLeft();
 		}
 	}
 
@@ -405,11 +409,31 @@ public:
 			break;
 		}
 	}
-	
-	
 };
 
 GameObjectManager GameObject::gameObjectManager{1};
+
+void Enemy::update()
+{
+	if (isInside() == false) return;
+
+	GameObject** gos = getGameObjects();
+	int maxGameObjects = getMaxGameObjects();
+	int pos = getPos();
+	for (int i = 0; i < maxGameObjects; ++i)
+	{
+		GameObject* obj = gos[i];
+		if (obj == nullptr) continue;
+		Bullet* bullet = dynamic_cast<Bullet*>(obj);
+		if (bullet == nullptr) continue;
+		if (bullet->checkFire() == false) continue;
+		if ((bullet->isDirectionRight() == true && bullet->getPos() + strlen(bullet->getShape()) == pos)
+			|| (bullet->isDirectionRight() == false && pos + strlen(getShape()) == bullet->getPos())) {
+			OnDamage();
+			bullet->resetFire();
+		}
+	}
+}
 
 int main()
 {
@@ -455,14 +479,20 @@ int main()
 				int nEnemies = 0;
 				int nPlayers = 0;
 				int nBullets = 0;
-				for (int i = 0; i < capacity; i++)
+				int nActiveBullets = 0;
+				for (int i = 0; i < capacity; ++i)
 				{
 					if (gos[i] == nullptr) continue;
-					if (dynamic_cast<Enemy*>(gos[i])) nEnemies++;
-					if (dynamic_cast<Player*>(gos[i])) nPlayers++;
-					if (dynamic_cast<Bullet*>(gos[i])) nBullets++;
+					if (dynamic_cast<Enemy*>(gos[i])) ++nEnemies;
+					if (dynamic_cast<Player*>(gos[i])) ++nPlayers;
+					if (dynamic_cast<Bullet*>(gos[i])) {
+						++nBullets;
+						if (static_cast<Bullet*>(gos[i])->checkFire() == true) {
+							++nActiveBullets;
+						}
+					}
 				}
-				printf("total = %3d, enemies = %3d, players = %3d, bullets = %3d\r", capacity, nEnemies, nPlayers, nBullets);
+				printf("total = %3d, enemies = %3d, players = %3d, bullets = %3d (%3d)\r", capacity, nEnemies, nPlayers, nBullets, nActiveBullets);
 				Sleep(3000);
 				continue;
 			}

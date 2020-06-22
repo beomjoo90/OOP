@@ -7,8 +7,7 @@ class Screen
 
 public:
 	Screen(int maxCount = 80) : len(maxCount + 1), canvas{ (char*)malloc(sizeof(char)*(maxCount + 1)) }
-	{
-	}
+	{}
 
 	~Screen() 
 	{

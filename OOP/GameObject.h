@@ -27,8 +27,9 @@ public:
 	void setShape(const char* shape);
 
 	bool isInside() const;
-	void moveRight() { ++pos; }
-	void moveLeft() { --pos; }
+	
+	virtual void moveRight() { ++pos; }
+	virtual void moveLeft() { --pos; }
 
 	virtual void process_input(int key) {}
 	virtual void update() {}

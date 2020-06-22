@@ -3,6 +3,7 @@
 #include "GameObject.h"
 #include "GameObjectManager.h"
 #include "Screen.h"
+#include "UI.h"
 
 
 GameObjectManager GameObject::gameObjectManager{ 1 };
@@ -33,7 +34,21 @@ void GameObject::setShape(const char* shape)
 
 bool GameObject::isInside() const
 {
-	return pos <= (screen.length() - strlen(shape)) && pos >= 0;
+	int start = 0;
+
+	GameObject** gos = GameObject::getGameObjects();
+	int capacity = GameObject::getMaxGameObjects();
+	for (int i = 0; i < capacity; i++)
+	{
+		if (gos[i] == nullptr) continue;
+		UI* ui = dynamic_cast<UI *>(gos[i]);
+		if (ui == nullptr) continue;
+		if (start < ui->getEndpoint()) {
+			start = ui->getEndpoint();
+		}
+	}
+
+	return pos <= (screen.length() - strlen(shape)) && pos >= start;
 }
 
 void GameObject::draw()

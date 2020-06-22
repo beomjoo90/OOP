@@ -11,6 +11,7 @@
 #include "Enemy.h"
 #include "Player.h"
 #include "Bullet.h"
+#include "UI.h"
 
 
 int main()
@@ -19,7 +20,11 @@ int main()
 
 	new BlinkableEnemy{ screen, "(*_*)" };
 	new Enemy{ screen, "(+_+)" };
-	new Player{ screen, "(o_o)" };
+	new Player{ screen, "(o_o)" };	
+	UI* uiTotal = new UI{ screen, "t : ", 0, 2 + 1 };
+	UI* uiBullets = new UI{ screen, "b: ", uiTotal->getEndpoint(), 2 + 1 };
+	UI* uiActiveBullets = new UI{ screen, "ab: ", uiBullets->getEndpoint(), 2 + 1 };
+	UI* uiEnemies = new UI{ screen, "e: ", uiActiveBullets->getEndpoint(), 2 + 1 };
 	
 	bool requestExit = false;
 	while (requestExit == false)		
@@ -40,6 +45,7 @@ int main()
 			Player* player = dynamic_cast<Player *>(obj); // dynamically downcast			
 			if (player != nullptr) {
 				// if player exists, check whether it is inside screen. otherwise, exit.
+
 				if (player->isInside() == false) {
 					requestExit = true;
 					break;
@@ -53,34 +59,34 @@ int main()
 			if (key == 'z') {
 				break; // exit from main loop
 			}
-			if (key == 'i') {
-				int nEnemies = 0;
-				int nPlayers = 0;
-				int nBullets = 0;
-				int nActiveBullets = 0;
-				for (int i = 0; i < capacity; ++i)
-				{
-					if (gos[i] == nullptr) continue;
-					if (dynamic_cast<Enemy*>(gos[i])) ++nEnemies;
-					if (dynamic_cast<Player*>(gos[i])) ++nPlayers;
-					if (dynamic_cast<Bullet*>(gos[i])) {
-						++nBullets;
-						if (static_cast<Bullet*>(gos[i])->checkFire() == true) {
-							++nActiveBullets;
-						}
-					}
-				}
-				printf("total = %3d, enemies = %3d, players = %3d, bullets = %3d (%3d)\r", capacity, nEnemies, nPlayers, nBullets, nActiveBullets);
-				Sleep(3000);
-				continue;
-			}
-
 			for (int i = 0; i < capacity; i++)
 			{
 				if (gos[i] == nullptr) continue;
 				gos[i]->process_input(key);
 			}
 		}
+		int nEnemies = 0;
+		int nPlayers = 0;
+		int nBullets = 0;
+		int nActiveBullets = 0;
+		for (int i = 0; i < capacity; ++i)
+		{
+			if (gos[i] == nullptr) continue;
+			if (dynamic_cast<Enemy*>(gos[i])) ++nEnemies;
+			if (dynamic_cast<Player*>(gos[i])) ++nPlayers;
+			if (dynamic_cast<Bullet*>(gos[i])) {
+				++nBullets;
+				if (static_cast<Bullet*>(gos[i])->checkFire() == true) {
+					++nActiveBullets;
+				}
+			}
+		}
+		uiTotal->setData(capacity);
+		uiBullets->setData(nBullets);
+		uiActiveBullets->setData(nActiveBullets);
+		uiEnemies->setData(nEnemies);
+
+
 		gos = GameObject::getGameObjects();
 		capacity = GameObject::getMaxGameObjects();
 		for (int i = 0; i < capacity; i++)

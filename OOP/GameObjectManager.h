@@ -14,7 +14,7 @@ public:
 	void add(GameObject* obj);
 	void remove(GameObject* obj);
 
-	GameObject** getGameObjects();
-	int getCapacity();
+	GameObject** getGameObjects() { return gos; }
+	int getCapacity() { return capacity; }
 };
 

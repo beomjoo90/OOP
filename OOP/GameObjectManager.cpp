@@ -7,8 +7,9 @@ GameObjectManager::GameObjectManager(int capacity)
 	for (int i = 0; i < capacity; i++)
 		gos[i] = (GameObject*)nullptr;
 }
-GameObjectManager::~GameObjectManager() {
 
+GameObjectManager::~GameObjectManager() 
+{
 	for (int i = 0; i < capacity; i++)
 	{
 		if (gos[i] == nullptr) continue;
@@ -52,6 +53,3 @@ void GameObjectManager::remove(GameObject* obj)
 		}
 	}
 }
-
-GameObject** GameObjectManager::getGameObjects() { return gos; }
-int GameObjectManager::getCapacity() { return capacity; }

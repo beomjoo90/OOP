@@ -10,17 +10,19 @@ class Bullet :
 	int		direction;
 
 public:
-	Bullet(Screen& screen, const char* shape = "");
+	Bullet(Screen& screen, const char* shape = "") 
+		: GameObject(screen, -1, shape), isFired(false), direction(0)
+	{}
 
-	~Bullet();
+	~Bullet() {}
 
-	bool checkFire();
-	void setFire();
-	void resetFire();
+	bool checkFire() { 	return isFired; }
+	void setFire() { isFired = true; }
+	void resetFire() { isFired = false; }
 
-	void makeDirectionLeft();
-	void makeDirectionRight();
-	bool isDirectionRight();
+	void makeDirectionLeft() { direction = 1;  }
+	void makeDirectionRight() { direction = 0; }
+	bool isDirectionRight() { return direction == 0; }
 
 	//overriding
 	void update();

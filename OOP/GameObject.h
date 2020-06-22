@@ -12,26 +12,26 @@ class GameObject
 
 public:
 	GameObject(Screen& screen, int pos, const char* shape);
-	virtual ~GameObject();
+	virtual ~GameObject() {}
 
 	//getter 게터
-	int getPos() const;
-	const char* getShape() const;
-	Screen& getScreen() const;
+	int getPos() const { return pos; }
+	const char* getShape() const { return shape; }
+	Screen& getScreen() const { return screen; }
 
 	static GameObject** getGameObjects();
 	static int getMaxGameObjects();
 
 	//setter 세터
-	void setPos(int pos);
+	void setPos(int pos) { this->pos = pos; }
 	void setShape(const char* shape);
 
 	bool isInside() const;
-	void moveRight();
-	void moveLeft();
+	void moveRight() { ++pos; }
+	void moveLeft() { --pos; }
 
-	virtual void process_input(int key);
-	virtual void update();
+	virtual void process_input(int key) {}
+	virtual void update() {}
 	virtual void draw();
 };
 

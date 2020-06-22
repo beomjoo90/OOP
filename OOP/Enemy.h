@@ -9,7 +9,8 @@ class Enemy :
 
 public:
 	Enemy(Screen& screen, const char* shape);
-	~Enemy();
+
+	~Enemy() {}
 
 	// overriding : 재정의
 	void process_input(int key);
@@ -17,7 +18,7 @@ public:
 	// overriding
 	void update();
 
-	virtual void OnDamage();
+	virtual void OnDamage() {}
 };
 
 class BlinkableEnemy :
@@ -27,16 +28,18 @@ class BlinkableEnemy :
 	int count;
 
 public:
-	BlinkableEnemy(Screen& screen, const char* shape);
+	BlinkableEnemy(Screen& screen, const char* shape)
+		: Enemy(screen, shape), isBlinking(false), count(0)
+	{}
 
-	void setBlinking();
+	void setBlinking() { isBlinking = true; count = 10; }
 
 	// overriding : 재정의
 	void process_input(int key);
 
 	// overriding
 	void update();
-	void OnDamage();
+	void OnDamage() { setBlinking(); }
 
 	// overriding
 	void draw();

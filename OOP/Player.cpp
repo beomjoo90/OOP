@@ -6,6 +6,9 @@
 #include "GameObject.h"
 #include "Screen.h"
 
+Player::Player(Screen& screen, const char* shape)
+	: GameObject(screen, rand() % (screen.length() - strlen(shape)), shape)
+{}
 
 Bullet* Player::findUnusedBullet()
 {
@@ -79,13 +82,6 @@ void Player::fire()
 		bullet->makeDirectionRight();
 	}
 }
-
-// constructor »ý¼ºÀÚ
-Player::Player(Screen& screen, const char* shape)
-	: GameObject(screen, rand() % (screen.length() - strlen(shape)), shape)
-{}
-
-Player::~Player() {}
 
 // overriding
 void Player::process_input(int key)

@@ -8,8 +8,6 @@ Enemy::Enemy(Screen& screen, const char* shape)
 	: GameObject(screen, rand() % (screen.length() - (int)strlen(shape)), shape)
 {}
 
-Enemy::~Enemy() {}
-
 // overriding : 재정의
 void Enemy::process_input(int key)
 {
@@ -42,19 +40,6 @@ void Enemy::update()
 	}
 }
 
-void Enemy::OnDamage() {}
-
-
-
-BlinkableEnemy::BlinkableEnemy(Screen& screen, const char* shape)
-	: Enemy(screen, shape), isBlinking(false), count(0)
-{}
-
-void BlinkableEnemy::setBlinking() {
-	isBlinking = true;
-	count = 10;
-}
-
 // overriding : 재정의
 void BlinkableEnemy::process_input(int key)
 {
@@ -74,11 +59,6 @@ void BlinkableEnemy::update()
 			isBlinking = false;
 		}
 	}
-}
-
-void BlinkableEnemy::OnDamage()
-{
-	setBlinking();
 }
 
 // overriding

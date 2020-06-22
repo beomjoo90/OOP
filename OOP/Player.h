@@ -14,8 +14,6 @@ public:
 	// constructor »ı¼ºÀÚ
 	Player(Screen& screen, const char* shape);
 
-	~Player();
-
 	// overriding
 	void process_input(int key);
 };

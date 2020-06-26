@@ -8,7 +8,7 @@ class Enemy :
 {
 
 public:
-	Enemy(Screen& screen, const char* shape);
+	Enemy(Screen& screen, int pos, const char* shape);
 
 	~Enemy() {}
 
@@ -18,7 +18,7 @@ public:
 	// overriding
 	void update();
 
-	virtual void OnDamage() {}
+	virtual void OnDamage();
 };
 
 class BlinkableEnemy :
@@ -28,8 +28,8 @@ class BlinkableEnemy :
 	int count;
 
 public:
-	BlinkableEnemy(Screen& screen, const char* shape)
-		: Enemy(screen, shape), isBlinking(false), count(0)
+	BlinkableEnemy(Screen& screen, int pos, const char* shape)
+		: Enemy(screen, pos, shape), isBlinking(false), count(0)
 	{}
 
 	void setBlinking() { isBlinking = true; count = 10; }

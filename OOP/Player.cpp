@@ -74,11 +74,11 @@ void Player::fire()
 	bullet->setFire();
 
 	bullet->setPos(pos);
-	bullet->setShape("<--");
+	bullet->setShape("<");
 	bullet->makeDirectionLeft();
 	if (pos < enemy_pos) {
 		bullet->setPos(bullet->getPos() + (int)strlen(getShape()) - 1);
-		bullet->setShape("-->");
+		bullet->setShape(">");
 		bullet->makeDirectionRight();
 	}
 }

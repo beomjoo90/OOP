@@ -3,9 +3,10 @@
 #include "Enemy.h"
 #include "Screen.h"
 #include "Bullet.h"
+#include "Player.h"
 
-Enemy::Enemy(Screen& screen, const char* shape)
-	: GameObject(screen, rand() % (screen.length() - (int)strlen(shape)), shape)
+Enemy::Enemy(Screen& screen, int pos, const char* shape)
+	: GameObject(screen, pos, shape)
 {}
 
 // overriding : 재정의
@@ -15,6 +16,11 @@ void Enemy::process_input(int key)
 	case 'w': moveRight(); break;
 	case 's': moveLeft(); break;
 	}
+}
+
+void Enemy::OnDamage()
+{
+	setActive(false);
 }
 
 // overriding
@@ -38,6 +44,28 @@ void Enemy::update()
 			bullet->resetFire();
 		}
 	}
+	
+	maxGameObjects = getMaxGameObjects();
+	for (int i = 0; i < maxGameObjects; ++i)
+	{
+		GameObject* obj = gos[i];
+		if (obj == nullptr) continue;
+		Player* player = dynamic_cast<Player*>(obj);
+		if (player == nullptr) continue;
+		int player_pos = player->getPos();
+		if (pos < player_pos) {
+			moveRight();
+		}
+		else if (pos > player_pos) {
+			moveLeft();
+		}
+		else {
+			setActive(false);
+		}
+
+	}
+
+
 }
 
 // overriding : 재정의

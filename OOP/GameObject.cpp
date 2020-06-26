@@ -12,10 +12,14 @@ GameObject** GameObject::getGameObjects() { return gameObjectManager.getGameObje
 int GameObject::getMaxGameObjects() { return gameObjectManager.getCapacity(); }
 
 GameObject::GameObject(Screen& screen, int pos, const char* shape)
-	: screen(screen), pos(pos)
+	: screen(screen), pos(pos), active(true)
 {
 	setShape(shape);
 	gameObjectManager.add(this);
+}
+
+GameObject::~GameObject() {
+	gameObjectManager.remove(this);
 }
 
 //setter ผผลอ

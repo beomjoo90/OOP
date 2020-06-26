@@ -9,16 +9,19 @@ class GameObject
 	char	shape[100]; // 0 ... 99
 	static  GameObjectManager gameObjectManager;
 	Screen& screen;
+	bool    active;
 
 public:
 	GameObject(Screen& screen, int pos, const char* shape);
-	virtual ~GameObject() {}
+	virtual ~GameObject();
 
 	//getter ╟тем
 	int getPos() const { return pos; }
 	const char* getShape() const { return shape; }
 	Screen& getScreen() const { return screen; }
+	bool isActive() const { return active;  }
 
+	void setActive(bool active = true) { this->active = active;  }
 	static GameObject** getGameObjects();
 	static int getMaxGameObjects();
 

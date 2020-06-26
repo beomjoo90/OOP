@@ -18,18 +18,26 @@ int main()
 {
 	Screen screen{ 80 };
 
-	new BlinkableEnemy{ screen, "(*_*)" };
-	new Enemy{ screen, "(+_+)" };
 	new Player{ screen, "(o_o)" };	
 	UI* uiTotal = new UI{ screen, "t : ", 0, 2 + 1 };
 	UI* uiBullets = new UI{ screen, "b: ", uiTotal->getEndpoint(), 2 + 1 };
 	UI* uiActiveBullets = new UI{ screen, "ab: ", uiBullets->getEndpoint(), 2 + 1 };
 	UI* uiEnemies = new UI{ screen, "e: ", uiActiveBullets->getEndpoint(), 2 + 1 };
+
+	int startOffset = uiEnemies->getEndpoint();
+
+	int nFramesToSpawnEnemy = 30;
 	
 	bool requestExit = false;
 	while (requestExit == false)		
 	{
+		if (--nFramesToSpawnEnemy == 0) {
+			new Enemy{ screen, (int)(screen.length() -strlen("(+_+)")), "(+_+)" };
+			nFramesToSpawnEnemy = 30;
+		}
+
 		screen.clear();
+
 		GameObject** gos = GameObject::getGameObjects();
 		int capacity = GameObject::getMaxGameObjects();
 
@@ -101,7 +109,17 @@ int main()
 			if (gos[i] == nullptr) continue;
 			gos[i]->draw();
 		}
-		
+
+		gos = GameObject::getGameObjects();
+		capacity = GameObject::getMaxGameObjects();
+		for (int i = 0; i < capacity; i++)
+		{
+			GameObject* obj = gos[i];
+			if (obj == nullptr) continue;
+			if (obj->isActive() == false) {
+				delete obj;
+			}
+		}
 		
 		// display canvas to a monitor
 		screen.render();

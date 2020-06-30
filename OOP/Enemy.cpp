@@ -18,7 +18,7 @@ void Enemy::process_input(int key)
 	}
 }
 
-void Enemy::OnDamage()
+void Enemy::OnDamage(GameObject* collider)
 {
 	setActive(false);
 }
@@ -38,10 +38,9 @@ void Enemy::update()
 		Bullet* bullet = dynamic_cast<Bullet*>(obj);
 		if (bullet == nullptr) continue;
 		if (bullet->checkFire() == false) continue;
-		if ((bullet->isDirectionRight() == true && bullet->getPos() + strlen(bullet->getShape()) == pos)
-			|| (bullet->isDirectionRight() == false && pos + strlen(getShape()) == bullet->getPos())) {
-			OnDamage();
-			bullet->resetFire();
+		if (bullet->isColliding(this) == true) {
+			OnDamage(bullet);
+			bullet->OnDamage(this);
 		}
 	}
 	
@@ -64,8 +63,6 @@ void Enemy::update()
 		}
 
 	}
-
-
 }
 
 // overriding : ¿Á¡§¿«

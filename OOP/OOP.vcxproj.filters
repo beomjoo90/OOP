@@ -39,6 +39,12 @@
     <ClCompile Include="UI.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="AlphabetEnemy.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="AlphabetBullet.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Screen.h">
@@ -60,6 +66,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="UI.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AlphabetEnemy.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="AlphabetBullet.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

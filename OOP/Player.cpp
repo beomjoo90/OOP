@@ -5,6 +5,7 @@
 #include "Enemy.h"
 #include "GameObject.h"
 #include "Screen.h"
+#include "AlphabetBullet.h"
 
 Player::Player(Screen& screen, const char* shape)
 	: GameObject(screen, rand() % (screen.length() - strlen(shape)), shape)
@@ -36,7 +37,7 @@ void Player::fire()
 {
 	Bullet* bullet = findUnusedBullet();
 	if (bullet == nullptr) {
-		bullet = new Bullet{ getScreen() };
+		bullet = new AlphabetBullet{ getScreen() };
 	}
 	// bullet != nullptr
 	int pos = getPos();
@@ -72,13 +73,17 @@ void Player::fire()
 		enemy_pos = closest->getPos();
 	}
 	bullet->setFire();
-
 	bullet->setPos(pos);
-	bullet->setShape("<");
+
+	char buf[2];
+	const int alphabetRange = 2;
+	buf[0] = rand() % alphabetRange + (rand() % 2 ? 'A' : 'a');
+	buf[1] = 0;
+	
+	bullet->setShape(buf);
 	bullet->makeDirectionLeft();
 	if (pos < enemy_pos) {
 		bullet->setPos(bullet->getPos() + (int)strlen(getShape()) - 1);
-		bullet->setShape(">");
 		bullet->makeDirectionRight();
 	}
 }

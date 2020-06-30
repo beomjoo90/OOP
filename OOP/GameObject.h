@@ -21,6 +21,8 @@ public:
 	Screen& getScreen() const { return screen; }
 	bool isActive() const { return active;  }
 
+	bool isColliding(const GameObject* opponent) const;
+
 	void setActive(bool active = true) { this->active = active;  }
 	static GameObject** getGameObjects();
 	static int getMaxGameObjects();
@@ -29,6 +31,8 @@ public:
 	void setPos(int pos) { this->pos = pos; }
 	void setShape(const char* shape);
 
+	virtual void OnDamage(GameObject* collider) {}
+	
 	bool isInside() const;
 	
 	virtual void moveRight() { ++pos; }

@@ -22,6 +22,18 @@ GameObject::~GameObject() {
 	gameObjectManager.remove(this);
 }
 
+bool GameObject::isColliding(const GameObject* opponent) const
+{
+	if (opponent == nullptr) return false;
+	int start = getPos();
+	int end = start + strlen(getShape());
+	int opp_start = opponent->getPos();
+	int opp_end = opp_start + strlen(opponent->getShape());
+	if (start <= opp_start && (opp_end <= end || opp_start <= end)) return true;
+	if (opp_start <= start && (end <= opp_end || start <= opp_end))  return true;
+	return false;
+}
+
 //setter ¼¼ÅÍ
 void GameObject::setShape(const char* shape)
 {

@@ -10,8 +10,8 @@ class Bullet :
 	int		direction;
 
 public:
-	Bullet(Screen& screen, const char* shape = "") 
-		: GameObject(screen, -1, shape), isFired(false), direction(0)
+	Bullet(Screen& screen, int pos = -1, const char* shape = "")
+		: GameObject(screen, pos, shape), isFired(false), direction(0)
 	{}
 
 	~Bullet() {}
@@ -29,5 +29,6 @@ public:
 
 	//overriding
 	void draw();
-};
 
+	void OnDamage(GameObject* collider);
+};

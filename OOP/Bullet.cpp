@@ -1,4 +1,5 @@
 #include "Bullet.h"
+#include "Enemy.h"
 
 //overriding
 void Bullet::update()
@@ -14,6 +15,13 @@ void Bullet::update()
 		moveRight();
 	else moveLeft();
 }
+
+void Bullet::OnDamage(GameObject* collider)
+{
+	resetFire();
+}
+
+
 
 //overriding
 void Bullet::draw()

@@ -18,7 +18,7 @@ public:
 	// overriding
 	void update();
 
-	virtual void OnDamage();
+	void OnDamage(GameObject* collider);
 };
 
 class BlinkableEnemy :
@@ -39,7 +39,7 @@ public:
 
 	// overriding
 	void update();
-	void OnDamage() { setBlinking(); }
+	void OnDamage(GameObject* collider) { setBlinking(); }
 
 	// overriding
 	void draw();

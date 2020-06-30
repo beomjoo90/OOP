@@ -2,7 +2,7 @@
 #include "UI.h"
 #include "Screen.h"
 
-int UI::currentCursor = 18;
+int UI::currentCursor = 25;
 
 
 UI::UI(Screen& screen, const char* prefix, int pos, int sz)

@@ -9,6 +9,7 @@
 
 #include "Screen.h"
 #include "Enemy.h"
+#include "AlphabetEnemy.h"
 #include "Player.h"
 #include "Bullet.h"
 #include "UI.h"
@@ -32,7 +33,7 @@ int main()
 	while (requestExit == false)		
 	{
 		if (--nFramesToSpawnEnemy == 0) {
-			new Enemy{ screen, (int)(screen.length() -strlen("(+_+)")), "(+_+)" };
+			new AlphabetEnemy{ screen };
 			nFramesToSpawnEnemy = 30;
 		}
 

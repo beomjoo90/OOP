@@ -18,11 +18,6 @@ AlphabetEnemy::AlphabetEnemy(Screen& screen)
 	setPos(screen.length() - len);
 }
 
-void AlphabetEnemy::update()
-{
-	Enemy::update();
-}
-
 void AlphabetEnemy::OnDamage(GameObject* collider)
 {
 	if (collider == nullptr) return;
@@ -44,4 +39,5 @@ void AlphabetEnemy::OnDamage(GameObject* collider)
 		}
 	}
 	setShape(shape);
+	if (strlen(shape) == 0) setActive(false);
 }

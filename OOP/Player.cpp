@@ -75,12 +75,6 @@ void Player::fire()
 	bullet->setFire();
 	bullet->setPos(pos);
 
-	char buf[2];
-	const int alphabetRange = 2;
-	buf[0] = rand() % alphabetRange + (rand() % 2 ? 'A' : 'a');
-	buf[1] = 0;
-	
-	bullet->setShape(buf);
 	bullet->makeDirectionLeft();
 	if (pos < enemy_pos) {
 		bullet->setPos(bullet->getPos() + (int)strlen(getShape()) - 1);

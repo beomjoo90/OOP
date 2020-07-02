@@ -31,7 +31,8 @@ void Enemy::update()
 	GameObject** gos = getGameObjects();
 	int maxGameObjects = getMaxGameObjects();
 	int pos = getPos();
-	for (int i = 0; i < maxGameObjects; ++i)
+	// make sure enemy is alive.
+	for (int i = 0; isActive() == true && i < maxGameObjects; ++i)
 	{
 		GameObject* obj = gos[i];
 		if (obj == nullptr) continue;
@@ -39,7 +40,7 @@ void Enemy::update()
 		if (bullet == nullptr) continue;
 		if (bullet->checkFire() == false) continue;
 		if (bullet->isColliding(this) == true) {
-			OnDamage(bullet);
+			OnDamage(bullet); // enemy may be damaged and killed by a bullet.
 			bullet->OnDamage(this);
 		}
 	}

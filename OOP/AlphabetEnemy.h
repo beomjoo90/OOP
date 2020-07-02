@@ -7,6 +7,5 @@ class AlphabetEnemy :
 public:
 	AlphabetEnemy(Screen& screen);
 
-	void update();
 	void OnDamage(GameObject* collider);
 };

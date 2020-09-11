@@ -5,126 +5,69 @@
 #include <conio.h>
 #include <Windows.h>
 #include <ctime>
-#include <cstdlib> // include malloc,
+#include <cstdlib> 
+#include "Utils.h"
 
-#include "Screen.h"
-#include "Enemy.h"
-#include "AlphabetEnemy.h"
-#include "Player.h"
-#include "Bullet.h"
-#include "UI.h"
+using namespace std;
+
+class Screen {
+	char* buffer;
+	int width;
+	int height;
+
+public:
+	Screen(int width = 10, int height = 10)
+		: width(width), height(height), buffer(new char[getSize()])
+	{
+		Borland::initialize();
+		buffer[getSize()-1] = '\0';
+	}
+
+	~Screen() { delete[] buffer; }
+
+	int getWidth() const { return width; }
+	int getScreenWidth() const { return width + 1; }
+	int getHeight() const { return height; }
+	int getSize() const { return getScreenWidth()*height; }
+
+	void clear() { memset(buffer, ' ', getSize()); buffer[getSize() - 1] = '\0';  }
+
+	void draw(int x, int y, char shape) { buffer[y* getScreenWidth() + x] = shape; }
+
+	void render()
+	{
+		for (int y = 0; y < height - 1; y++) {
+			buffer[y * getScreenWidth() + width] = '\n';
+		}
+		buffer[getSize()-1] = '\0';
+
+		Borland::gotoxy(0, 0);
+		cout << buffer;
+	}
+};
 
 
 int main()
 {
-	Screen screen{ 80 };
+	Screen screen{ 10, 10 };
 
-	new Player{ screen, "(o_o)" };	
-	UI* uiTotal = new UI{ screen, "t : ", 0, 2 + 1 };
-	UI* uiBullets = new UI{ screen, "b: ", uiTotal->getEndpoint(), 2 + 1 };
-	UI* uiActiveBullets = new UI{ screen, "ab: ", uiBullets->getEndpoint(), 2 + 1 };
-	UI* uiEnemies = new UI{ screen, "e: ", uiActiveBullets->getEndpoint(), 2 + 1 };
-
-	int startOffset = uiEnemies->getEndpoint();
-
-	int nFramesToSpawnEnemy = 30;
-	
 	bool requestExit = false;
-	while (requestExit == false)		
+	int x = 0, y = 0;
+
+	while (requestExit == false)
 	{
-		if (--nFramesToSpawnEnemy == 0) {
-			new AlphabetEnemy{ screen };
-			nFramesToSpawnEnemy = 30;
-		}
-
 		screen.clear();
-
-		GameObject** gos = GameObject::getGameObjects();
-		int capacity = GameObject::getMaxGameObjects();
-
-		// update game objects (player, enemy ...)
-		// gos, maxGameObjects
-		for (int i = 0; i < capacity; i++)
-		{	
-			GameObject* obj = gos[i];
-			if (obj == nullptr) continue;			
-
-			// obj != nullptr
-			// search player
-			Player* player = dynamic_cast<Player *>(obj); // dynamically downcast			
-			if (player != nullptr) {
-				// if player exists, check whether it is inside screen. otherwise, exit.
-
-				if (player->isInside() == false) {
-					requestExit = true;
-					break;
-				}
-				continue;
-			}
-		}
-
-		if (_kbhit()) {
-			int key = _getch();
-			if (key == 'z') {
-				break; // exit from main loop
-			}
-			for (int i = 0; i < capacity; i++)
-			{
-				if (gos[i] == nullptr) continue;
-				gos[i]->process_input(key);
-			}
-		}
-		int nEnemies = 0;
-		int nPlayers = 0;
-		int nBullets = 0;
-		int nActiveBullets = 0;
-		for (int i = 0; i < capacity; ++i)
-		{
-			if (gos[i] == nullptr) continue;
-			if (dynamic_cast<Enemy*>(gos[i])) ++nEnemies;
-			if (dynamic_cast<Player*>(gos[i])) ++nPlayers;
-			if (dynamic_cast<Bullet*>(gos[i])) {
-				++nBullets;
-				if (static_cast<Bullet*>(gos[i])->checkFire() == true) {
-					++nActiveBullets;
-				}
-			}
-		}
-		uiTotal->setData(capacity);
-		uiBullets->setData(nBullets);
-		uiActiveBullets->setData(nActiveBullets);
-		uiEnemies->setData(nEnemies);
-
-
-		gos = GameObject::getGameObjects();
-		capacity = GameObject::getMaxGameObjects();
-		for (int i = 0; i < capacity; i++)
-		{
-			if (gos[i] == nullptr) continue;
-			gos[i]->update();
-		}
-
-
-		for (int i = 0; i < capacity; i++)
-		{
-			if (gos[i] == nullptr) continue;
-			gos[i]->draw();
-		}
-
-		gos = GameObject::getGameObjects();
-		capacity = GameObject::getMaxGameObjects();
-		for (int i = 0; i < capacity; i++)
-		{
-			GameObject* obj = gos[i];
-			if (obj == nullptr) continue;
-			if (obj->isActive() == false) {
-				delete obj;
-			}
-		}
-		
-		// display canvas to a monitor
+		screen.draw(x, y, '0' + x);
 		screen.render();
+
+		// debugging
+		Borland::gotoxy(20, 20);
+		printf("x = %d, y = %d", x, y);
+
 		Sleep(100);
+		
+		++x %= screen.getWidth();
+		++y %= screen.getHeight();
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
 	return 0;

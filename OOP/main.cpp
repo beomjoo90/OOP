@@ -72,40 +72,114 @@ Screen* Screen::instance = nullptr;
 // 싱글턴을 상속할 수 있다.
 
 
-HANDLE hStdin;
-DWORD fdwSaveOldMode;
+// singleton
+class InputManager {
 
-VOID ErrorExit(const char *);
-VOID KeyEventProc(KEY_EVENT_RECORD);
-VOID MouseEventProc(MOUSE_EVENT_RECORD);
-VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD);
-
-int main()
-{
-	Screen* screen = Screen::getInstance();
-	DWORD cNumRead, fdwMode;
 	INPUT_RECORD irInBuf[128];
 
-	hStdin = GetStdHandle(STD_INPUT_HANDLE);
-	if (hStdin == INVALID_HANDLE_VALUE)
-		ErrorExit("GetStdHandle");
+	HANDLE hStdin;
+	DWORD fdwSaveOldMode;
 
-	if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
-		ErrorExit("GetConsoleMode");
+	InputManager() : hStdin(GetStdHandle(STD_INPUT_HANDLE)) {
+		if (hStdin == INVALID_HANDLE_VALUE)
+			ErrorExit("GetStdHandle");
+		if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
+			ErrorExit("GetConsoleMode");
+		if (!SetConsoleMode(hStdin, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT))
+			ErrorExit("SetConsoleMode");
+	}
 
-	// Enable the window and mouse input events. 
-
-	fdwMode = ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT;
-	if (!SetConsoleMode(hStdin, fdwMode))
-		ErrorExit("SetConsoleMode");
-
-	bool requestExit = false;
-	int x = 0, y = 0;
-
-	while (requestExit == false)
+	VOID ErrorExit(const char* lpszMessage)
 	{
-		screen->clear();
+		Borland::gotoxy(0, 21);
+		printf("%80d\r", ' ');
+		printf("%s\n", lpszMessage);
 
+		// Restore input mode on exit.
+
+		SetConsoleMode(hStdin, fdwSaveOldMode);
+
+		ExitProcess(0);
+	}
+
+	VOID KeyEventProc(KEY_EVENT_RECORD ker)
+	{
+		Borland::gotoxy(0, 22);
+		printf("%80d\r", ' ');
+
+		printf("Key event: %c  %d        ", ker.uChar, ker.wRepeatCount);
+
+		if (ker.bKeyDown)
+			printf("key pressed\n");
+		else 
+			printf("key released\n");
+		
+	}
+
+	VOID MouseEventProc(MOUSE_EVENT_RECORD mer)
+	{
+#ifndef MOUSE_HWHEELED
+#define MOUSE_HWHEELED 0x0008
+#endif
+		Borland::gotoxy(0, 22);
+		printf("%80d\r", ' ');
+
+		printf("Mouse event: %d %d      ", mer.dwMousePosition.X, mer.dwMousePosition.Y);
+
+		switch (mer.dwEventFlags)
+		{
+		case 0:
+
+			if (mer.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED)
+			{
+				printf("left button press \n");
+			}
+			else if (mer.dwButtonState == RIGHTMOST_BUTTON_PRESSED)
+			{
+				printf("right button press \n");
+			}
+			else
+			{
+				printf("button press\n");
+			}
+			break;
+		case DOUBLE_CLICK:
+			printf("double click\n");
+			break;
+		case MOUSE_HWHEELED:
+			printf("horizontal mouse wheel\n");
+			break;
+		case MOUSE_MOVED:
+			printf("mouse moved\n");
+			break;
+		case MOUSE_WHEELED:
+			printf("vertical mouse wheel\n");
+			break;
+		default:
+			printf("unknown\n");
+			break;
+		}
+	}
+
+	VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
+	{
+		Borland::gotoxy(0, 22);
+		printf("%80d\r", ' ');
+		printf("Resize event:             ");
+		printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
+	}
+
+	static InputManager* instance;
+public:
+	static InputManager* getInstance() {
+		if (instance == nullptr) {
+			instance = new InputManager;
+		}
+		return instance;
+	}
+
+	void readInputs() {
+		DWORD cNumRead;
 		if (!ReadConsoleInput(
 			hStdin,      // input buffer handle 
 			irInBuf,     // buffer to read into 
@@ -113,9 +187,6 @@ int main()
 			&cNumRead)) // number of records read 
 			ErrorExit("ReadConsoleInput");
 
-		// Dispatch the events to the appropriate handler. 
-
-		
 		for (int i = 0; i < cNumRead; i++)
 		{
 			switch (irInBuf[i].EventType)
@@ -142,16 +213,30 @@ int main()
 				break;
 			}
 		}
-
-
-		screen->draw(x, y, '0' + x);
-		screen->render();
-
-
-
 		// debugging
 		Borland::gotoxy(0, 21);
 		printf("cNumRead = %d", cNumRead);
+	}
+};
+
+InputManager* InputManager::instance = nullptr;
+
+int main()
+{
+	Screen* screen = Screen::getInstance();
+	InputManager* inputManager = InputManager::getInstance();
+	
+	bool requestExit = false;
+	int x = 0, y = 0;
+
+	while (requestExit == false)
+	{
+		screen->clear();
+
+		inputManager->readInputs();
+
+		screen->draw(x, y, '0' + x);
+		screen->render();
 
 		Sleep(100);
 
@@ -161,80 +246,3 @@ int main()
 	return 0;
 }
 
-VOID ErrorExit(const char* lpszMessage)
-{
-	Borland::gotoxy(0, 21);
-	printf("%80d\r", ' ');
-	printf("%s\n", lpszMessage);
-
-	// Restore input mode on exit.
-
-	SetConsoleMode(hStdin, fdwSaveOldMode);
-
-	ExitProcess(0);
-}
-
-VOID KeyEventProc(KEY_EVENT_RECORD ker)
-{
-	Borland::gotoxy(0, 22);
-	printf("%80d\r", ' ');
-	
-	printf("Key event: %c  %d        ", ker.uChar, ker.wRepeatCount);
-
-	if (ker.bKeyDown)
-		printf("key pressed\n");
-	else printf("key released\n");
-}
-
-VOID MouseEventProc(MOUSE_EVENT_RECORD mer)
-{
-#ifndef MOUSE_HWHEELED
-#define MOUSE_HWHEELED 0x0008
-#endif
-	Borland::gotoxy(0, 22);
-	printf("%80d\r", ' ');
-
-	printf("Mouse event: %d %d      ", mer.dwMousePosition.X, mer.dwMousePosition.Y);
-
-	switch (mer.dwEventFlags)
-	{
-	case 0:
-
-		if (mer.dwButtonState == FROM_LEFT_1ST_BUTTON_PRESSED)
-		{
-			printf("left button press \n");
-		}
-		else if (mer.dwButtonState == RIGHTMOST_BUTTON_PRESSED)
-		{
-			printf("right button press \n");
-		}
-		else
-		{
-			printf("button press\n");
-		}
-		break;
-	case DOUBLE_CLICK:
-		printf("double click\n");
-		break;
-	case MOUSE_HWHEELED:
-		printf("horizontal mouse wheel\n");
-		break;
-	case MOUSE_MOVED:
-		printf("mouse moved\n");
-		break;
-	case MOUSE_WHEELED:
-		printf("vertical mouse wheel\n");
-		break;
-	default:
-		printf("unknown\n");
-		break;
-	}
-}
-
-VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
-{
-	Borland::gotoxy(0, 22);
-	printf("%80d\r", ' ');
-	printf("Resize event:             ");
-	printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
-}

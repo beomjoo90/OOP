@@ -5,6 +5,8 @@
 #include <conio.h>
 #include <ctime>
 #include <cstdlib> 
+#include <deque>
+#include <string>
 #include "Utils.h"
 
 using namespace std;
@@ -43,6 +45,9 @@ public:
 	void clear() { memset(buffer, ' ', getSize()); buffer[getSize() - 1] = '\0';  }
 
 	void draw(int x, int y, char shape) { buffer[y* getScreenWidth() + x] = shape; }
+	void draw(int x, int y, const char* shape) {
+		strncpy(&buffer[y* getScreenWidth() + x], shape, strlen(shape));
+	}
 
 	void render()
 	{
@@ -80,13 +85,14 @@ class InputManager {
 	HANDLE hStdin;
 	DWORD fdwSaveOldMode;
 
-	InputManager() : hStdin(GetStdHandle(STD_INPUT_HANDLE)) {
-		if (hStdin == INVALID_HANDLE_VALUE)
-			ErrorExit("GetStdHandle");
-		if (!GetConsoleMode(hStdin, &fdwSaveOldMode))
-			ErrorExit("GetConsoleMode");
-		if (!SetConsoleMode(hStdin, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT))
-			ErrorExit("SetConsoleMode");
+	deque<INPUT_RECORD> events;
+
+	InputManager() : hStdin(GetStdHandle(STD_INPUT_HANDLE)), irInBuf{ {0} }	{
+		if (hStdin == INVALID_HANDLE_VALUE) return;
+		FlushConsoleInputBuffer(hStdin);
+		if (!GetConsoleMode(hStdin, &fdwSaveOldMode)) return;		
+		if (!SetConsoleMode(hStdin, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT)) return;
+		events.clear();
 	}
 
 	VOID ErrorExit(const char* lpszMessage)
@@ -104,16 +110,10 @@ class InputManager {
 
 	VOID KeyEventProc(KEY_EVENT_RECORD ker)
 	{
-		Borland::gotoxy(0, 22);
-		printf("%80d\r", ' ');
-
-		printf("Key event: %c  %d        ", ker.uChar, ker.wRepeatCount);
-
 		if (ker.bKeyDown)
 			printf("key pressed\n");
 		else 
 			printf("key released\n");
-		
 	}
 
 	VOID MouseEventProc(MOUSE_EVENT_RECORD mer)
@@ -159,15 +159,9 @@ class InputManager {
 			printf("unknown\n");
 			break;
 		}
+		
 	}
 
-	VOID ResizeEventProc(WINDOW_BUFFER_SIZE_RECORD wbsr)
-	{
-		Borland::gotoxy(0, 22);
-		printf("%80d\r", ' ');
-		printf("Resize event:             ");
-		printf("Console screen buffer is %d columns by %d rows.\n", wbsr.dwSize.X, wbsr.dwSize.Y);
-	}
 
 	static InputManager* instance;
 public:
@@ -178,44 +172,92 @@ public:
 		return instance;
 	}
 
+	bool GetKeyDown(WORD ch) {
+		if (events.empty() == true) return false;
+		INPUT_RECORD& in = events.front();
+		if (in.EventType != KEY_EVENT) return false;
+		if (in.Event.KeyEvent.bKeyDown == TRUE) {
+			return in.Event.KeyEvent.wVirtualKeyCode == ch;
+		}
+		return false;
+	}
+
 	void readInputs() {
 		DWORD cNumRead;
-		if (!ReadConsoleInput(
+		DWORD nEvents;
+
+		if (!GetNumberOfConsoleInputEvents(hStdin, &nEvents)) return;
+		if (nEvents == 0) return;
+
+		nEvents = min(nEvents, 128);
+		ReadConsoleInput(
 			hStdin,      // input buffer handle 
 			irInBuf,     // buffer to read into 
-			128,         // size of read buffer 
-			&cNumRead)) // number of records read 
-			ErrorExit("ReadConsoleInput");
-
-		for (int i = 0; i < cNumRead; i++)
+			nEvents,         // size of read buffer 
+			&cNumRead); // number of records read
+			
+		for (int i = 0; i < (int)cNumRead; i++)
 		{
-			switch (irInBuf[i].EventType)
-			{
-			case KEY_EVENT: // keyboard input 
-				KeyEventProc(irInBuf[i].Event.KeyEvent);
-				break;
-
-			case MOUSE_EVENT: // mouse input 
-				MouseEventProc(irInBuf[i].Event.MouseEvent);
-				break;
-
-			case WINDOW_BUFFER_SIZE_EVENT: // scrn buf. resizing 
-				ResizeEventProc(irInBuf[i].Event.WindowBufferSizeEvent);
-				break;
-
-			case FOCUS_EVENT:  // disregard focus events 
-
-			case MENU_EVENT:   // disregard menu events 
-				break;
-
-			default:
-				ErrorExit("Unknown event type");
-				break;
-			}
+			events.push_back(irInBuf[i]);
 		}
-		// debugging
-		Borland::gotoxy(0, 21);
-		printf("cNumRead = %d", cNumRead);
+	}
+
+	void consumeEvent() 
+	{
+		if (events.empty() == true) return;
+		events.pop_front();
+	}
+};
+
+class GameObject {
+
+	string shape;
+	Position pos;
+
+protected:
+	Screen& screen;
+	InputManager& inputManager;
+
+public:
+	GameObject(int x, int y, const string& shape ) 
+		: shape(shape), screen( *Screen::getInstance()), 
+		inputManager( *InputManager::getInstance() ),
+		pos(x, y) 
+	{
+		start();
+	}
+	virtual ~GameObject() {}
+
+	void setPos(int x, int y) { pos.x = x; pos.y = y; }
+	void setPos(const Position& pos) { this->pos.x = pos.x; this->pos.y = pos.y; }
+	Position getPos() const { return pos; }
+
+	virtual void update() {}
+	virtual void start() {}
+	virtual void draw() { screen.draw(pos.x, pos.y, shape.c_str()); }
+};
+
+class Block : public GameObject {
+
+public:
+	Block(int x = 5, int y = 5, const string& shape = "(^_^)")
+		: GameObject(x, y, shape) {}
+	
+	void update() override
+	{
+		Position pos = getPos();
+		if (inputManager.GetKeyDown(VK_LEFT) == true) {
+			setPos(pos.x - 1, pos.y);
+		}
+		if (inputManager.GetKeyDown(VK_RIGHT) == true) {
+			setPos(pos.x + 1, pos.y);
+		}
+		if (inputManager.GetKeyDown(VK_UP) == true) {
+			setPos(pos.x, pos.y - 1);
+		}
+		if (inputManager.GetKeyDown(VK_DOWN) == true) {
+			setPos(pos.x, pos.y + 1);
+		}
 	}
 };
 
@@ -223,24 +265,27 @@ InputManager* InputManager::instance = nullptr;
 
 int main()
 {
-	Screen* screen = Screen::getInstance();
-	InputManager* inputManager = InputManager::getInstance();
+	Screen& screen = *Screen::getInstance();
+	InputManager& inputManager = *InputManager::getInstance();
 	
 	bool requestExit = false;
 	int x = 0, y = 0;
+	Block block;
 
 	while (requestExit == false)
 	{
-		screen->clear();
+		screen.clear();
 
-		inputManager->readInputs();
+		inputManager.readInputs();
 
-		screen->draw(x, y, '0' + x);
-		screen->render();
+		block.update();
+		block.draw();
 
+		screen.render();
+
+		inputManager.consumeEvent();
+		
 		Sleep(100);
-
-					
 	}
 	printf("\n정상적으로 종료되었습니다.\n");
 	return 0;

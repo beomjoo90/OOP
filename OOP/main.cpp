@@ -7,6 +7,7 @@
 #include <cstdlib> 
 #include <deque>
 #include <string>
+#include <vector>
 #include "Utils.h"
 
 using namespace std;
@@ -14,13 +15,13 @@ using namespace std;
 // forward declaration
 
 class Screen {
-	char* buffer;
 	int width;
 	int height;
+	char* buffer;
 
-	Screen(int width = 10, int height = 10)
-		: width(width), height(height), buffer(new char[getSize()])
-	{
+	Screen(int w = 10, int h = 10)
+		: width(w), height(h), buffer{ new char[getSize()] }
+	{	
 		Borland::initialize();
 		buffer[getSize() - 1] = '\0';
 	}
@@ -174,7 +175,7 @@ public:
 
 	bool GetKeyDown(WORD ch) {
 		if (events.empty() == true) return false;
-		INPUT_RECORD& in = events.front();
+		const INPUT_RECORD& in = events.front();
 		if (in.EventType != KEY_EVENT) return false;
 		if (in.Event.KeyEvent.bKeyDown == TRUE) {
 			return in.Event.KeyEvent.wVirtualKeyCode == ch;
@@ -240,7 +241,7 @@ public:
 class Block : public GameObject {
 
 public:
-	Block(int x = 5, int y = 5, const string& shape = "(^_^)")
+	Block(const string& shape = "(^_^)", int x = 5, int y = 5)
 		: GameObject(x, y, shape) {}
 	
 	void update() override
@@ -270,7 +271,10 @@ int main()
 	
 	bool requestExit = false;
 	int x = 0, y = 0;
-	Block block;
+	vector<GameObject*> gameObjects;
+	gameObjects.push_back(new Block{ "(^_^)", 5, 5 });
+	gameObjects.push_back(new Block{ "(-_-)", 10, 10 });
+	
 
 	while (requestExit == false)
 	{
@@ -278,8 +282,14 @@ int main()
 
 		inputManager.readInputs();
 
-		block.update();
-		block.draw();
+		for (auto object : gameObjects)
+		{
+			object->update();
+		}
+		for (auto object : gameObjects)
+		{
+			object->draw();
+		}
 
 		screen.render();
 

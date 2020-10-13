@@ -247,17 +247,20 @@ public:
 	void update() override
 	{
 		Position pos = getPos();
-		if (inputManager.GetKeyDown(VK_LEFT) == true) {
-			setPos(pos.x - 1, pos.y);
+
+		// TODO: 2020. 10. 13
+		if (inputManager.GetKeyDown(VK_LEFT) == true) {			
+			//Position newPos{ operator+(pos, Position::left) };
+			//setPos(newPos);
 		}
 		if (inputManager.GetKeyDown(VK_RIGHT) == true) {
-			setPos(pos.x + 1, pos.y);
+			//setPos(pos + Position::right);
 		}
 		if (inputManager.GetKeyDown(VK_UP) == true) {
-			setPos(pos.x, pos.y - 1);
+			//setPos(pos + Position::down);
 		}
 		if (inputManager.GetKeyDown(VK_DOWN) == true) {
-			setPos(pos.x, pos.y + 1);
+			//setPos(pos + Position::up);
 		}
 	}
 };
@@ -274,6 +277,7 @@ int main()
 	vector<GameObject*> gameObjects;
 	gameObjects.push_back(new Block{ "(^_^)", 5, 5 });
 	gameObjects.push_back(new Block{ "(-_-)", 10, 10 });
+
 	
 
 	while (requestExit == false)

@@ -7,7 +7,19 @@ struct Position {
 	int x;
 	int y;
 	Position(int x = 0, int y = 0) : x(x), y(y) {}
+	Position(const Position& other) : x(other.x), y(other.y) {} // copy constructor
+
+	static Position up;
+	static Position right;
+	static Position down;
+	static Position left;
 };
+
+Position Position::up{ 0, 1 };
+Position Position::down{ 0, -1 };
+Position Position::right{ 1, 0 };
+Position Position::left{ -1, 0 };
+
 
 class Borland {
 

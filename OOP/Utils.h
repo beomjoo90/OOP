@@ -6,14 +6,46 @@
 struct Position {
 	int x;
 	int y;
+
 	Position(int x = 0, int y = 0) : x(x), y(y) {}
 	Position(const Position& other) : x(other.x), y(other.y) {} // copy constructor
+	
+	const Position operator+(const Position& other)
+	{
+		return Position{ this->x + other.x, this->y + other.y };
+	}
+
+	const Position operator-(const Position& other)
+	{
+		return Position{ this->x - other.x, this->y - other.y };
+	}
+
+	Position& operator+=(const Position& source)
+	{
+		this->x += source.x; this->y += source.y;
+		return *this;
+	}
+
+	Position& operator=(const Position& source) {
+		this->x = source.x; this->y = source.y;
+		return *this;
+	}
+
+	const Position operator*(int scale) {
+		return Position{ this->x*scale, this->y*scale };
+	}
+
+	const Position operator/(int scale) {
+		if (scale == 0) return *this;
+		return Position{ (int)(this->x/scale), (int)(this->y/scale) };
+	}
 
 	static Position up;
 	static Position right;
 	static Position down;
 	static Position left;
 };
+
 
 Position Position::up{ 0, 1 };
 Position Position::down{ 0, -1 };

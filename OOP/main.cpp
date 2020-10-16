@@ -160,7 +160,7 @@ class InputManager {
 			printf("unknown\n");
 			break;
 		}
-		
+
 	}
 
 
@@ -196,14 +196,14 @@ public:
 			irInBuf,     // buffer to read into 
 			nEvents,         // size of read buffer 
 			&cNumRead); // number of records read
-			
+
 		for (int i = 0; i < (int)cNumRead; i++)
 		{
 			events.push_back(irInBuf[i]);
 		}
 	}
 
-	void consumeEvent() 
+	void consumeEvent()
 	{
 		if (events.empty() == true) return;
 		events.pop_front();
@@ -220,10 +220,10 @@ protected:
 	InputManager& inputManager;
 
 public:
-	GameObject(int x, int y, const string& shape ) 
-		: shape(shape), screen( *Screen::getInstance()), 
-		inputManager( *InputManager::getInstance() ),
-		pos(x, y) 
+	GameObject(int x, int y, const string& shape)
+		: shape(shape), screen(*Screen::getInstance()),
+		inputManager(*InputManager::getInstance()),
+		pos(x, y)
 	{
 		start();
 	}
@@ -243,24 +243,28 @@ class Block : public GameObject {
 public:
 	Block(const string& shape = "(^_^)", int x = 5, int y = 5)
 		: GameObject(x, y, shape) {}
-	
+
 	void update() override
 	{
 		Position pos = getPos();
 
-		// TODO: 2020. 10. 13
-		if (inputManager.GetKeyDown(VK_LEFT) == true) {			
-			//Position newPos{ operator+(pos, Position::left) };
-			//setPos(newPos);
+		if (inputManager.GetKeyDown(VK_LEFT) == true) {
+			setPos(pos - Position::right);
 		}
 		if (inputManager.GetKeyDown(VK_RIGHT) == true) {
-			//setPos(pos + Position::right);
+			setPos(pos + Position::right);
 		}
 		if (inputManager.GetKeyDown(VK_UP) == true) {
-			//setPos(pos + Position::down);
+			setPos(pos - Position::up);
 		}
 		if (inputManager.GetKeyDown(VK_DOWN) == true) {
-			//setPos(pos + Position::up);
+			setPos(pos + Position::up);
+		}
+		if (inputManager.GetKeyDown(VK_MULTIPLY) == true) {
+			setPos(pos * 2);
+		}
+		if (inputManager.GetKeyDown(VK_DIVIDE) == true) {
+			setPos(pos / 2);
 		}
 	}
 };

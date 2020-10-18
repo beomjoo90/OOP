@@ -45,17 +45,33 @@ public:
 
 	void clear() { memset(buffer, ' ', getSize()); buffer[getSize() - 1] = '\0';  }
 
-	void draw(int x, int y, char shape) { buffer[y* getScreenWidth() + x] = shape; }
+	void draw(int x, int y, const char shape) { buffer[y* getScreenWidth() + x] = shape; }
 	void draw(int x, int y, const char* shape) {
+		if (shape == nullptr) return;
 		strncpy(&buffer[y* getScreenWidth() + x], shape, strlen(shape));
 	}
+	void draw(const Position& pos, char shape) { draw(pos.x, pos.y, shape); }
+	void draw(const Position& pos, const char* shape) { draw(pos.x, pos.y, shape); }
+	void drawLineHorizontal(const Position& pos, int width) {
+		if (pos.x < 0 || pos.y < 0 || pos.x + width > getWidth() || pos.y > getHeight()) return;
+		for (int i = pos.x; i <= min(this->width, pos.x + width); i++) draw(i, pos.y, 178);
+	}
+	void drawLineVertical(const Position& pos, int height) {
+		if (pos.x < 0 || pos.y < 0 || pos.x > getWidth() || pos.y + height > getHeight()) return;
+		for (int i = pos.y; i <= min(this->height,  pos.y + height); i++) draw(pos.x, i, 178);
+	}
+	void drawRectangle(const Position& topLeft, const Position& sz) {
+		drawLineHorizontal(topLeft, sz.x);
+		drawLineHorizontal(topLeft + Position{ 0, sz.y }, sz.x);
+		drawLineVertical(topLeft, sz.y);
+		drawLineVertical(topLeft + Position{ sz.x, 0 }, sz.y);
+	}	
 
 	void render()
 	{
-		for (int y = 0; y < height - 1; y++) {
-			buffer[y * getScreenWidth() + width] = '\n';
-		}
-		buffer[getSize()-1] = '\0';
+		for (int y = 0; y < height - 1; y++) 
+			draw(width, y, '\n');
+		draw(width - 1, height, '\0');
 
 		Borland::gotoxy(0, 0);
 		cout << buffer;
@@ -91,6 +107,12 @@ class InputManager {
 	InputManager() : hStdin(GetStdHandle(STD_INPUT_HANDLE)), irInBuf{ {0} }	{
 		if (hStdin == INVALID_HANDLE_VALUE) return;
 		FlushConsoleInputBuffer(hStdin);
+
+		string mode = "mode con:cols=" + to_string(Screen::getInstance()->getWidth() + 10);
+		mode += " lines=" + to_string(Screen::getInstance()->getHeight() + 5);
+		std::system(mode.c_str());
+		std::system("chcp 437");
+
 		if (!GetConsoleMode(hStdin, &fdwSaveOldMode)) return;		
 		if (!SetConsoleMode(hStdin, ENABLE_WINDOW_INPUT | ENABLE_MOUSE_INPUT)) return;
 		events.clear();
@@ -160,9 +182,7 @@ class InputManager {
 			printf("unknown\n");
 			break;
 		}
-
 	}
-
 
 	static InputManager* instance;
 public:
@@ -183,6 +203,22 @@ public:
 		return false;
 	}
 
+	bool GetLeftMouseDown() {
+		if (events.empty() == true) return false;
+		const INPUT_RECORD& in = events.front();
+		if (in.EventType != MOUSE_EVENT) return false;
+		return in.Event.MouseEvent.dwEventFlags == 0
+			&& (in.Event.MouseEvent.dwButtonState & FROM_LEFT_1ST_BUTTON_PRESSED);
+	}
+
+	bool GetRightMouseDown() {
+		if (events.empty() == true) return false;
+		const INPUT_RECORD& in = events.front();
+		if (in.EventType != MOUSE_EVENT) return false;
+		return in.Event.MouseEvent.dwEventFlags == 0
+			&& (in.Event.MouseEvent.dwButtonState & RIGHTMOST_BUTTON_PRESSED);
+	}
+
 	void readInputs() {
 		DWORD cNumRead;
 		DWORD nEvents;
@@ -197,10 +233,7 @@ public:
 			nEvents,         // size of read buffer 
 			&cNumRead); // number of records read
 
-		for (int i = 0; i < (int)cNumRead; i++)
-		{
-			events.push_back(irInBuf[i]);
-		}
+		for (int i = 0; i < (int)cNumRead; i++) events.push_back(irInBuf[i]);
 	}
 
 	void consumeEvent()
@@ -215,121 +248,134 @@ class GameObject {
 	string shape;
 	Position pos;
 
+	Position parentPos; // your parent's global position in space
+	bool dirty; // mark it TRUE if your local position is changed.
+
 protected:
 	Screen& screen;
 	InputManager& inputManager;
 
 	vector<GameObject *> children;
+	GameObject* parent;
+
+	void setParentPos(const Position& parentPos) { this->parentPos = parentPos; }	
 
 public:
-	GameObject(int x, int y, const string& shape)
+	GameObject(int x, int y, const string& shape, GameObject* parent = nullptr)
 		: shape(shape), screen(*Screen::getInstance()),
 		inputManager(*InputManager::getInstance()),
-		pos(x, y)
+		pos(x, y), parent(parent), dirty(false)
 	{
+		setParentPos(parent ? parent->getWorldPos() : Position::zeros);
+		if (parent) parent->add(this);
+		
 		start();
 	}
+
+	GameObject(const Position& pos, const string& shape, GameObject* parent = nullptr) 
+		: GameObject(pos.x, pos.y, shape, parent) {}
+
+	virtual ~GameObject() {}
 
 	void add(GameObject* child) {
 		if (!child) return;
 		children.push_back(child);
 	}
 
-	GameObject(const Position& pos, const string& shape) : GameObject(pos.x, pos.y, shape) {}
-	
-	virtual ~GameObject() {}
-
-	void setPos(int x, int y) { pos.x = x; pos.y = y; }
-	void setPos(const Position& pos) { this->pos.x = pos.x; this->pos.y = pos.y; }
-	Position getPos() const { return pos; }
-
-	virtual void update() {}
-	virtual void start() {}
-	virtual void draw( const Position& parentPos) 
-	{ 
-		Position pos = getPos();
-		pos += parentPos;
-		screen.draw(pos.x, pos.y, shape.c_str()); 
+	void setPos(int x, int y) { setPos(Position{ x, y }); }
+	void setPos(const Position& pos) { 
+		this->pos.x = pos.x; this->pos.y = pos.y;
+		dirty = true;
 	}
+
+	Position getPos() const { return pos; }
+	Position getWorldPos() const { return parentPos + pos; }
+
+	void setParent(GameObject* parent) {
+		this->parent = parent;
+		setParentPos(parent ? parent->getWorldPos() : Position::zeros);
+		for (auto child : children) child->internalUpdatePos(true);
+	}
+
+	virtual void start() {}
+
+	void internalUpdatePos(bool dirty = false) {
+		bool inheritedDirty = dirty;
+		if (inheritedDirty == false) {
+			if (this->dirty == true) inheritedDirty = true;
+		} else {
+			if (parent) setParentPos(parent->getWorldPos());
+		}
+		
+		for (auto child : children) child->internalUpdatePos(inheritedDirty);
+		this->dirty = false;
+	}
+
+	void internalUpdate() {
+		update();
+		for (auto child : children) child->internalUpdate();
+	}
+	virtual void update() {}
+
+	void internalDraw() { 
+		draw();
+		for (auto child : children) child->internalDraw();
+	}
+	virtual void draw() { screen.draw(getWorldPos(), shape.c_str()); }
 };
 
 class Block : public GameObject {
 
 public:
-	Block(int x = 5, int y = 5, const string& shape = "(^_^)")
-		: GameObject(x, y, shape) {}
+	Block(const Position& pos, const string& shape, GameObject* parent = nullptr)
+		: GameObject(pos, shape, parent) {}
 
 	void update() override
 	{
 		Position pos = getPos();
-
-		if (inputManager.GetKeyDown(VK_MULTIPLY) == true) {
-			setPos(pos * 2);
-		}
-		if (inputManager.GetKeyDown(VK_DIVIDE) == true) {
-			setPos(pos / 2);
-		}
+		if (inputManager.GetKeyDown(VK_DIVIDE)) setPos(pos + Position::left);
+		if (inputManager.GetKeyDown(VK_MULTIPLY)) setPos(pos + Position::right);
 	}
 };
 
 class Panel : public GameObject {
 	int width;
 	int height;
-
-	char displayBuffer[100];
-
+	
 public:
-	Panel(const Position& pos, int width, int height) : GameObject(pos, ""), 
+	Panel(const Position& pos, int width, int height, GameObject* parent) : GameObject(pos, "", parent), 
 		width(width), height(height)
 	{}
-
 
 	void update() override
 	{
 		Position pos = getPos();
-
-		if (inputManager.GetKeyDown(VK_LEFT) == true) {
-			setPos(pos - Position::right);
-		}
-		if (inputManager.GetKeyDown(VK_RIGHT) == true) {
-			setPos(pos + Position::right);
-		}
-		if (inputManager.GetKeyDown(VK_UP) == true) {
-			setPos(pos - Position::up);
-		}
-		if (inputManager.GetKeyDown(VK_DOWN) == true) {
-			setPos(pos + Position::up);
-		}
-		for (auto child : children)
-			child->update();
+		if (inputManager.GetKeyDown(VK_LEFT)) setPos(pos + Position::left);
+		if (inputManager.GetKeyDown(VK_RIGHT)) setPos(pos + Position::right);
+		if (inputManager.GetKeyDown(VK_UP)) setPos(pos + Position::down);
+		if (inputManager.GetKeyDown(VK_DOWN)) setPos(pos + Position::up);
 	}
 
-	void draw(const Position& parentPos) override
+	void draw() override
+	{	
+		Position pos = getWorldPos();
+		screen.drawRectangle(Position{ pos.x - 1, pos.y - 1 }, Position{ width + 1, height + 1 });
+	}
+};
+
+class Text : public GameObject {
+
+public:
+	Text(const Position& pos, const string& message, GameObject* parent)
+		: GameObject(pos, message.c_str(), parent)
+	{}
+
+	void update() override
 	{
-		
 		Position pos = getPos();
-		pos += parentPos;
-		int x = pos.x;
-		int y = pos.y;
-
-		if (x <= 0 || x >= screen.getWidth() -2 ) return;
-		if (y <= 0 || y >= screen.getHeight() -2 ) return;
-
-		int i = x - 1;
-		for (; i < (x+width); i++)
-			displayBuffer[i-x+1] = '-';
-		displayBuffer[width] = 0;
-		screen.draw(x - 1, y - 1, displayBuffer);
-		screen.draw(x - 1, y - 1 + height, displayBuffer);
-		for (int j = y; j < y - 1 + height; j++) {
-			screen.draw(x - 1, j, '-');
-			screen.draw(x + width - 1, j, '-');
-		}
-		for (auto child : children)
-		{
-			child->draw(pos);
-		}
-	}
+		if (inputManager.GetLeftMouseDown()) setPos(pos + Position::left);
+		if (inputManager.GetRightMouseDown()) setPos(pos + Position::right);
+	}	
 };
 
 InputManager* InputManager::instance = nullptr;
@@ -338,29 +384,28 @@ int main()
 {
 	Screen& screen = *Screen::getInstance();
 	InputManager& inputManager = *InputManager::getInstance();
-	
-	bool requestExit = false;
-	vector<GameObject*> scene;
+	vector<GameObject*> scene;	
 
-	Panel* panel = new Panel{ Position{ 3,3}, 10, 10 };
-	panel->add(new Block{0,0} );
+	auto panel = new Panel{ Position{3,3}, 10, 10, nullptr };
+	new Text{ Position{0,3}, "Hello", new Block{ Position::zeros, "(^_^)", panel } };
+
+	auto panel2 = new Panel{ Position{20, 3}, 10, 10, nullptr };
+	new Text{ Position{0,3}, "World",  new Block{ Position::zeros, "(+_+)", panel2 } };
 
 	scene.push_back(panel);
+	scene.push_back(panel2);
 
-	while (requestExit == false)
+	while (true)
 	{
 		screen.clear();
 
 		inputManager.readInputs();
 
-		for (auto object : scene)
-		{
-			object->update();
-		}
-		for (auto object : scene)
-		{
-			object->draw(Position{ 0,0 });
-		}
+		if (inputManager.GetKeyDown(VK_ESCAPE)) break;
+
+		for (auto object : scene) object->internalUpdate();
+		for (auto object : scene) object->internalUpdatePos(false);
+		for (auto object : scene) object->internalDraw();
 
 		screen.render();
 
@@ -368,7 +413,8 @@ int main()
 		
 		Sleep(100);
 	}
-	printf("\n정상적으로 종료되었습니다.\n");
+	printf("\nTerminated Successfully.\n");
+
 	return 0;
 }
 

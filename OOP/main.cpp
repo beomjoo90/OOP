@@ -31,7 +31,7 @@ public:
 
 	static Screen* getInstance() {
 		if (instance == nullptr) {
-			instance = new Screen{ 80, 20 };
+			instance = new Screen{ 80, 30 };
 		}
 		return instance;
 	}
@@ -337,10 +337,12 @@ public:
 class Panel : public GameObject {
 	int width;
 	int height;
+	string title;
 	
 public:
-	Panel(const Position& pos, int width, int height, GameObject* parent) : GameObject(pos, "", parent), 
-		width(width), height(height)
+	Panel(const string& title, const Position& pos, int width, int height, GameObject* parent) 
+		: GameObject(pos, "", parent), 
+		width(width), height(height), title(title)
 	{}
 
 	void update() override
@@ -356,6 +358,7 @@ public:
 	{	
 		Position pos = getWorldPos();
 		screen.drawRectangle(Position{ pos.x - 1, pos.y - 1 }, Position{ width + 2, height + 2 });
+		screen.draw(Position{ pos.x + 1, pos.y -1 }, title.c_str());
 	}
 };
 
@@ -395,6 +398,32 @@ public:
 	}	
 };
 
+class TextInput : public GameObject {
+	int value;
+
+public:
+	TextInput(const Position& pos, int data, GameObject* parent)
+		: GameObject(pos, "", parent), value(data)
+	{}
+
+	void update() override
+	{
+		Position pos = getPos();
+		if (inputManager.GetLeftMouseDown()) setPos(pos + Position::left);
+		if (inputManager.GetRightMouseDown()) setPos(pos + Position::right);
+	}
+
+	void draw() override
+	{
+		static char buffer[10];
+		sprintf(buffer, "%3d\0", value);
+		Position pos = getWorldPos();
+		screen.draw(pos, buffer);
+	}
+
+	void setValue(int value) { this->value = value; }
+};
+
 InputManager* InputManager::instance = nullptr;
 
 int main()
@@ -403,14 +432,19 @@ int main()
 	InputManager& inputManager = *InputManager::getInstance();
 	vector<GameObject*> scene;	
 
-	auto panel = new Panel{ Position{3,3}, 10, 10, nullptr };
-	new Text{ Position{0,3}, "Hello", new Block{ Position::zeros, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3},  panel } };
+	auto panel = new Panel{ "", Position{3,3}, 10, 20, nullptr };
+	new Block{ Position{4,0}, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3},  panel };
 
-	auto panel2 = new Panel{ Position{20, 3}, 10, 10, nullptr };
-	new Text{ Position{0,3}, "World",  new Block{ Position::zeros, "\xdb \xdb \xdb\xdb", Position{ 2, 3 }, panel2 } };
+	auto panel2 = new Panel{ " Next", Position{20, 3}, 10, 5, nullptr };
+	new Block{ Position{5, 1}, "\xdb \xdb \xdb\xdb", Position{ 2, 3 }, panel2 };
+
+	auto panel3 = new Panel{ " Score", Position{20, 19}, 10, 4, nullptr };
+	int value = 0;
+	auto score = new TextInput{ Position{4, 2}, value, panel3 };
 
 	scene.push_back(panel);
 	scene.push_back(panel2);
+	scene.push_back(panel3);
 
 	while (true)
 	{
@@ -419,6 +453,11 @@ int main()
 		inputManager.readInputs();
 
 		if (inputManager.GetKeyDown(VK_ESCAPE)) break;
+
+		if (inputManager.GetKeyDown(VK_SPACE)) {
+			value++;
+			score->setValue(value);
+		}
 
 		for (auto object : scene) object->internalUpdate();
 		for (auto object : scene) object->internalUpdatePos(false);

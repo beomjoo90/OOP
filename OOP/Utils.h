@@ -48,7 +48,6 @@ struct Position {
 	static Position ones;
 };
 
-
 Position Position::up{ 0, 1 };
 Position Position::down{ 0, -1 };
 Position Position::right{ 1, 0 };

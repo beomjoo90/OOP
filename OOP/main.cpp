@@ -300,6 +300,7 @@ public:
 	Position getWorldPos() const { return parentPos + pos; }
 
 	const char* getShape() const { return shape.c_str(); }
+	void setShape(const string& shape) { this->shape = shape; }
 
 	void setParent(GameObject* parent) {
 		this->parent = parent;
@@ -348,10 +349,6 @@ public:
 	void update() override
 	{
 		Position pos = getPos();
-		if (inputManager.GetKeyDown(VK_LEFT)) setPos(pos + Position::left);
-		if (inputManager.GetKeyDown(VK_RIGHT)) setPos(pos + Position::right);
-		if (inputManager.GetKeyDown(VK_UP)) setPos(pos + Position::down);
-		if (inputManager.GetKeyDown(VK_DOWN)) setPos(pos + Position::up);
 	}
 
 	void draw() override
@@ -364,16 +361,35 @@ public:
 
 class Block : public GameObject {
 	Position size;
+	char* internalShapeData; // it is used only in rotateShape().
+	bool rotatable;
+
+	void rotateShape() {
+		if (rotatable == false) return;
+
+		string shape = getShape();
+		int w = size.x; int h = size.y;
+		const char* p = shape.c_str();
+		strncpy(internalShapeData, p, w*h);
+		for (int y = 0; y < h; y++)
+			for (int x = 0; x < w; x++)
+				internalShapeData[(w - 1 - x)*h + y] = p[y*w + x];
+		setShape(internalShapeData);
+		size.x = h; size.y = w;
+	}
 
 public:
-	Block(const Position& pos, const string& shape, const Position& size, GameObject* parent = nullptr)
-		: GameObject(pos, shape, parent), size(size) {}
+	Block(const Position& pos, const string& shape, const Position& size, GameObject* parent = nullptr, bool rotatable = true)
+		: GameObject(pos, shape, parent), size(size), internalShapeData(new char[size.x*size.y+1]), rotatable(rotatable) {}
+
+	~Block() {
+		if (internalShapeData != nullptr) delete[] internalShapeData;
+	}
 
 	void update() override
 	{
 		Position pos = getPos();
-		if (inputManager.GetKeyDown(VK_DIVIDE)) setPos(pos + Position::left);
-		if (inputManager.GetKeyDown(VK_MULTIPLY)) setPos(pos + Position::right);
+		if (inputManager.GetKeyDown(VK_UP)) rotateShape();
 	}
 
 	void draw() override
@@ -393,8 +409,6 @@ public:
 	void update() override
 	{
 		Position pos = getPos();
-		if (inputManager.GetLeftMouseDown()) setPos(pos + Position::left);
-		if (inputManager.GetRightMouseDown()) setPos(pos + Position::right);
 	}	
 };
 
@@ -409,8 +423,8 @@ public:
 	void update() override
 	{
 		Position pos = getPos();
-		if (inputManager.GetLeftMouseDown()) setPos(pos + Position::left);
-		if (inputManager.GetRightMouseDown()) setPos(pos + Position::right);
+		//if (inputManager.GetLeftMouseDown()) setPos(pos + Position::left);
+		//if (inputManager.GetRightMouseDown()) setPos(pos + Position::right);
 	}
 
 	void draw() override
@@ -433,18 +447,19 @@ int main()
 	vector<GameObject*> scene;	
 
 	auto panel = new Panel{ "", Position{3,3}, 10, 20, nullptr };
-	new Block{ Position{4,0}, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3},  panel };
+	new Block{ Position{4,0}, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3}, panel };
+	new Block{ Position{10,0}, "\xdb\xdb \xdb\xdb\xdb", Position{ 2, 3},  panel };
 
-	auto panel2 = new Panel{ " Next", Position{20, 3}, 10, 5, nullptr };
-	new Block{ Position{5, 1}, "\xdb \xdb \xdb\xdb", Position{ 2, 3 }, panel2 };
+	auto nextPanel = new Panel{ " Next", Position{20, 3}, 10, 5, nullptr };
+	new Block{ Position{5, 1}, "\xdb \xdb \xdb\xdb", Position{ 2, 3 }, nextPanel, false };
 
-	auto panel3 = new Panel{ " Score", Position{20, 19}, 10, 4, nullptr };
+	auto scorePanel = new Panel{ " Score", Position{20, 19}, 10, 4, nullptr };
 	int value = 0;
-	auto score = new TextInput{ Position{4, 2}, value, panel3 };
+	auto score = new TextInput{ Position{4, 2}, value, scorePanel };
 
 	scene.push_back(panel);
-	scene.push_back(panel2);
-	scene.push_back(panel3);
+	scene.push_back(nextPanel);
+	scene.push_back(scorePanel);
 
 	while (true)
 	{

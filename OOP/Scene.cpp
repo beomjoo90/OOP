@@ -1,10 +1,22 @@
 #include "Scene.h"
 #include "GameObject.h"
+#include "PanelScript.h"
 
-Scene::Scene() {}
+Scene::Scene() {
+}
+
 Scene& Scene::getInstance() {
 	static Scene instance;
 	return instance;
+}
+
+void Scene::start() {
+	auto mainPanel = GameObject::Instantiate("mainPanel");
+	mainPanel->addComponent<PanelScript>();
+	
+	auto nextPanel = GameObject::Instantiate("nextPanel");
+
+	for (auto gameObject : gameObjects) gameObject->internalStart();
 }
 
 void Scene::add(GameObject* go) {

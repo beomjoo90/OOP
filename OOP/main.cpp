@@ -23,14 +23,7 @@ int main()
 	InputManager& inputManager = InputManager::getInstance();
 	Scene& scene = Scene::getInstance();
 
-	auto mainPanel = new GameObject("mainPanel");
-	auto mainPanelScript = new PanelScript(mainPanel);
-
-	auto nextPanel = new GameObject("nextPanel");
-	auto nextPanelScript = new PanelScript(nextPanel);
-	
-	scene.add(mainPanel);
-	scene.add(nextPanel);
+	scene.start();
 
 	while (true)
 	{

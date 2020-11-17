@@ -4,6 +4,5 @@
 
 Component::Component(GameObject* gameObject)
 	: gameObject(gameObject)
-{
-	gameObject->addComponent(this);
+{	
 }

@@ -10,7 +10,6 @@ class Scene {
 	vector<GameObject *> gameObjects;
 	Scene();
 
-
 public:
 	static Scene& getInstance();
 

@@ -21,10 +21,17 @@ void GameObject::internalDraw() {
 	for (auto child : children) child->internalDraw();
 }
 
-GameObject* GameObject::Instantiate(const string& name, const string& tag, GameObject* parent, const Position& pos)
+GameObject* GameObject::Instantiate(const string& name, const string& tag, GameObject* parent, 
+	const Position& pos, const string& shape, const Position& size )
 {
 	auto gameObject = new GameObject(name, tag, parent);
+	gameObject->transform->setPosition(pos);
+	gameObject->transform->setShape(shape);
+	gameObject->transform->setSize(size);
+
 	if (parent == nullptr) Scene::getInstance().add(gameObject);
+	else parent->add(gameObject);
+
 	return gameObject;
 }
 
@@ -39,8 +46,9 @@ GameObject::GameObject(const string& name,
 	scene(Scene::getInstance()),
 	inputManager(InputManager::getInstance())
 {	
-	addComponent<Transform>();
-	transform = getComponent<Transform>();
+	//addComponent<Transform>(); 
+	//transform = getComponent<Transform>();
+	transform = getOrAddComponent<Transform>();
 }
 
 GameObject::~GameObject() {}

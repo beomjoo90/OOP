@@ -11,6 +11,8 @@ class Component;
 class Transform;
 class InputManager;
 
+#include "Transform.h"
+
 class GameObject
 {
 	string		name;
@@ -39,19 +41,20 @@ protected:
 
 	static GameObject* Instantiate(const string& name,
 		const string& tag = "Unknown", GameObject* parent = nullptr,
-		const Position& pos = Position{ 0, 0 }
+		const Position& pos = Position{ 0, 0 },
+		const string& shape = "",
+		const Position& size = Position{1, 1}
 	);	
 	
 public:
 	
 	~GameObject();
-
 	
 	template<typename T>
 	void addComponent()
 	{
 		auto t = new T(this);
-		if (dynamic_cast<T *>(t) == nullptr) {
+		if (dynamic_cast<Component *>(t) == nullptr) {
 			delete t;
 			return;
 		}
@@ -66,6 +69,32 @@ public:
 			if (found) return found;
 		}
 		return nullptr;
+	}
+
+	template<typename T>
+	T* getOrAddComponent()
+	{
+		auto t = getComponent<T>();
+		if (t == nullptr) {
+			addComponent<T>();
+			t = getComponent<T>();
+		}
+		return t;
+	}
+
+	template<typename T>
+	void removeComponent()
+	{
+		for (auto it = components.begin(); it != components.end(); )
+		{
+			if (dynamic_cast<T *>(*it)) it = components.erase(it);
+			else it++;
+		}
+	}
+
+	void add(GameObject* child) {
+		if (child == nullptr) return;
+		children.push_back(child);
 	}
 
 	const string getName() const { return name; }

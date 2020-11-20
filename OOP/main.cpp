@@ -17,12 +17,15 @@
 
 using namespace std;
 
+
+
 int main()
 {
 	Screen& screen = Screen::getInstance();
 	InputManager& inputManager = InputManager::getInstance();
 	Scene& scene = Scene::getInstance();
 
+	
 	scene.start();
 
 	while (true)

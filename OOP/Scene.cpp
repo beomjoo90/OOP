@@ -11,10 +11,16 @@ Scene& Scene::getInstance() {
 }
 
 void Scene::start() {
-	auto mainPanel = GameObject::Instantiate("mainPanel");
+	auto mainPanel = GameObject::Instantiate("mainPanel", "panel", nullptr,
+		Position{ 1, 1 }, "", Position{ 70, 30 });
 	mainPanel->addComponent<PanelScript>();
-	
+	auto movingBlock = GameObject::Instantiate("tetris block", "block", mainPanel,
+		Position{ 4, 0 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
+
 	auto nextPanel = GameObject::Instantiate("nextPanel");
+	auto staticBlock = GameObject::Instantiate("next block", "block", nextPanel);
+
+	auto scorePanel = GameObject::Instantiate("scorePanel");
 
 	for (auto gameObject : gameObjects) gameObject->internalStart();
 }

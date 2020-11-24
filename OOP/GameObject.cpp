@@ -46,8 +46,6 @@ GameObject::GameObject(const string& name,
 	scene(Scene::getInstance()),
 	inputManager(InputManager::getInstance())
 {	
-	//addComponent<Transform>(); 
-	//transform = getComponent<Transform>();
 	transform = getOrAddComponent<Transform>();
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 class GameObject;
 class Transform;
+class InputManager;
 
 class Component
 {
@@ -10,6 +11,10 @@ protected:
 	
 public:
 	Component(GameObject* gameObject);
+
+	Transform* getTransform() const;
+
+	InputManager& getInputManager() const;
 
 	virtual void start() {}
 	virtual void update() {}

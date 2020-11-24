@@ -1,6 +1,7 @@
 #include "Scene.h"
 #include "GameObject.h"
 #include "PanelScript.h"
+#include "RotateScript.h"
 
 Scene::Scene() {
 }
@@ -12,13 +13,16 @@ Scene& Scene::getInstance() {
 
 void Scene::start() {
 	auto mainPanel = GameObject::Instantiate("mainPanel", "panel", nullptr,
-		Position{ 1, 1 }, "", Position{ 70, 30 });
+		Position{ 1, 1 }, "", Position{ 40, 30 });
 	mainPanel->addComponent<PanelScript>();
+
 	auto movingBlock = GameObject::Instantiate("tetris block", "block", mainPanel,
-		Position{ 4, 0 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
+		Position{ 4, 2 }, "\xdb \xdb \xdb\xdb", Position{ 2, 3 } );
+	movingBlock->addComponent<RotateScript>();
 
 	auto nextPanel = GameObject::Instantiate("nextPanel");
-	auto staticBlock = GameObject::Instantiate("next block", "block", nextPanel);
+	auto staticBlock = GameObject::Instantiate("next block", "block", nextPanel,
+		Position{ 50, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
 
 	auto scorePanel = GameObject::Instantiate("scorePanel");
 

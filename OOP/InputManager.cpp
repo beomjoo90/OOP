@@ -4,6 +4,8 @@
 #include "InputManager.h"
 #include "Screen.h"
 
+
+
 InputManager::InputManager() 
 	: hStdin(GetStdHandle(STD_INPUT_HANDLE)), irInBuf{ {0} }
 {

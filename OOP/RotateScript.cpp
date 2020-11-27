@@ -20,6 +20,8 @@ void RotateScript::start() {
 	const char* p = shape.c_str();
 	if (shapeData == nullptr) shapeData = new char[size.x*size.y + 1];
 	strncpy(shapeData, p, size.x*size.y);
+	
+	GameObject* block = GameObject::Find("block");
 }
 
 void RotateScript::rotate() {

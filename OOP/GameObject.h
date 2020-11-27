@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <vector>
+#include <map>
 #include "Utils.h"
 
 using namespace std;
@@ -16,11 +17,14 @@ class InputManager;
 class GameObject
 {
 	string		name;
+	string		absolutePath;
 	string		tag;
 	bool		hideFlag;
 
 	GameObject(const string& name, const string& tag,
 		GameObject* parent);
+
+	static map<string, vector<GameObject*>> objects;
 
 protected:
 	Screen& screen;
@@ -98,5 +102,8 @@ public:
 	}
 
 	const string getName() const { return name; }
+
+
+	static GameObject* Find(const string& name);
 };
 

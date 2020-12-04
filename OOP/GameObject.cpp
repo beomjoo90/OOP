@@ -6,29 +6,44 @@
 #include "InputManager.h"
 #include <algorithm>
 
-
 map<string, vector<GameObject *>> GameObject::objects;
 
-GameObject* GameObject::Find(const string& name)
+void GameObject::Add(GameObject* obj)
+{
+	if (!obj) return;
+
+	auto it = objects.find(obj->name);
+	if (it == objects.cend())
+		objects[obj->name] = vector<GameObject *>();
+
+	auto& entry = objects[obj->name];
+	auto found = find_if(entry.cbegin(), entry.cend(), 
+		[&](auto item) { return item->absolutePath == obj->absolutePath; } );
+
+	if (found != entry.cend()) return;
+	entry.push_back(obj);
+}
+
+GameObject* GameObject::Find(const string& path)
 {
 	if (objects.empty()) return nullptr;
 
-	auto found = find_if(objects.begin(), objects.end(),
-		[=](auto& pair) { return pair.first == name; } );
-	string path = name;
-	auto idx = path.find_first_of('/');
-	if (idx == string::npos) return nullptr;
-	auto temporaryName = path.substr( idx + 1);
+	// extract name part from path or from name
+	string nameOnly = path;
+	auto idx = path.find_last_of('/');
+	if (idx != string::npos)
+		nameOnly = path.substr(idx + 1);
+	
+	auto found = objects.find(nameOnly); 
+	if (found == objects.end()) return nullptr;
+	auto& entry = found->second;
 
-	auto found2 = find_if(objects.begin(), objects.end(),
-		[=](auto& pair) { return pair->first == temporaryName;  });
-	if (found2 == objects.end()) return nullptr;
-	auto entry = found2->second;
-	if (entry.size() == 0) return nullptr;
-	auto found3 = find_if(entry.begin(), entry.end(),
-		[=](auto obj) { return obj->absolutePath == path});
-	if (found3 == entry.end()) return nullptr;
-	return *found3;
+	// if search by name only with no absolute path
+	if (nameOnly == path) return entry.size() > 0 ? entry[0] : nullptr;
+
+	// search by absolute path
+	auto result = find_if(entry.cbegin(), entry.cend(), [&](auto item) { return item->absolutePath == path; });
+	return result != entry.cend() ? *result : nullptr;
 }
 
 void GameObject::internalStart() {
@@ -58,9 +73,10 @@ GameObject* GameObject::Instantiate(const string& name, const string& tag, GameO
 	if (parent == nullptr) Scene::getInstance().add(gameObject);
 	else parent->add(gameObject);
 
+	GameObject::Add(gameObject);
+
 	return gameObject;
 }
-
 
 GameObject::GameObject(const string& name, 
 	const string& tag,
@@ -68,8 +84,10 @@ GameObject::GameObject(const string& name,
 	: name(name), tag(tag), parent(parent),
 	hideFlag(false), 
 	transform(nullptr),
+	absolutePath( parent == nullptr ? "/" + name : parent->absolutePath + "/" + name),
 	screen(Screen::getInstance()),
 	scene(Scene::getInstance()),
+
 	inputManager(InputManager::getInstance())
 {	
 	transform = getOrAddComponent<Transform>();

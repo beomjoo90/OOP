@@ -25,7 +25,7 @@ class GameObject
 		GameObject* parent);
 
 	static map<string, vector<GameObject*>> objects;
-
+	
 protected:
 	Screen& screen;
 	Scene& scene;
@@ -53,6 +53,8 @@ protected:
 public:
 	
 	~GameObject();
+
+	
 	
 	template<typename T>
 	void addComponent()
@@ -70,6 +72,10 @@ public:
 	{
 		for (auto component : components) {
 			auto found = dynamic_cast<T *>(component);
+			if (found) return found;
+		}
+		for (auto child : children) {
+			auto found = child->getComponent<T>();
 			if (found) return found;
 		}
 		return nullptr;
@@ -105,5 +111,7 @@ public:
 
 
 	static GameObject* Find(const string& name);
+
+	static void Add(GameObject* obj);
 };
 

@@ -20,11 +20,23 @@ void Scene::start() {
 		Position{ 4, 2 }, "\xdb \xdb \xdb\xdb", Position{ 2, 3 } );
 	movingBlock->addComponent<RotateScript>();
 
+	auto movingBlock2 = GameObject::Instantiate("block", "block", mainPanel,
+		Position{ 50, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 });
+	movingBlock2->addComponent<RotateScript>();
+
 	auto nextPanel = GameObject::Instantiate("next");
 	auto staticBlock = GameObject::Instantiate("block", "block", nextPanel,
 		Position{ 50, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
 
 	auto scorePanel = GameObject::Instantiate("score", "panel", nullptr);
+
+	auto found = GameObject::Find("block");
+	auto found2 = GameObject::Find("/next/block");
+	auto found3 = GameObject::Find("/next/block/block");
+	auto found4 = GameObject::Find("main");
+	auto found5 = GameObject::Find("/main");
+	auto found6 = GameObject::Find("/main/another");
+	auto found7 = GameObject::Find("another");
 
 	for (auto gameObject : gameObjects) gameObject->internalStart();
 }

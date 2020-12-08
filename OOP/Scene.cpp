@@ -27,8 +27,12 @@ void Scene::start() {
 	auto nextPanel = GameObject::Instantiate("next");
 	auto staticBlock = GameObject::Instantiate("block", "block", nextPanel,
 		Position{ 50, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
+	auto anotherBlock = GameObject::Instantiate("another", "block", nextPanel,
+		Position{ 60, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 } );
 
 	auto scorePanel = GameObject::Instantiate("score", "panel", nullptr);
+
+
 
 	auto found = GameObject::Find("block");
 	auto found2 = GameObject::Find("/next/block");
@@ -37,6 +41,11 @@ void Scene::start() {
 	auto found5 = GameObject::Find("/main");
 	auto found6 = GameObject::Find("/main/another");
 	auto found7 = GameObject::Find("another");
+	auto found8 = GameObject::Find("");
+	
+	GameObject::Remove(found7);
+
+	auto found10 = GameObject::Find("/next/another");
 
 	for (auto gameObject : gameObjects) gameObject->internalStart();
 }

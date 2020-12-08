@@ -24,6 +24,23 @@ void GameObject::Add(GameObject* obj)
 	entry.push_back(obj);
 }
 
+void GameObject::Remove(GameObject* obj)
+{
+	if (obj == nullptr) return;
+
+	try {
+		auto& entry = objects[obj->name]; // NOTE: entry should not be copied from map.
+		auto result = find_if(entry.cbegin(), entry.cend(), [&](auto item) { return item->absolutePath == obj->absolutePath; });
+		if (result == entry.cend()) return;
+		entry.erase(result);
+	}
+	catch (int exception)
+	{
+		exception = 0;
+		return;
+	}
+}
+
 GameObject* GameObject::Find(const string& path)
 {
 	if (objects.empty()) return nullptr;

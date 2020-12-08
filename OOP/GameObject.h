@@ -113,5 +113,9 @@ public:
 	static GameObject* Find(const string& name);
 
 	static void Add(GameObject* obj);
+
+	static void Remove(GameObject* obj);
+
+	
 };
 

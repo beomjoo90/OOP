@@ -2,6 +2,7 @@
 #include "GameObject.h"
 #include "PanelScript.h"
 #include "RotateScript.h"
+#include <algorithm>
 
 Scene::Scene() {
 }
@@ -20,9 +21,6 @@ void Scene::start() {
 		Position{ 4, 2 }, "\xdb \xdb \xdb\xdb", Position{ 2, 3 } );
 	movingBlock->addComponent<RotateScript>();
 
-	auto movingBlock2 = GameObject::Instantiate("block", "block", mainPanel,
-		Position{ 50, 2 }, "\xdb  \xdb\xdb\xdb  \xdb", Position{ 3, 3 });
-	movingBlock2->addComponent<RotateScript>();
 
 	auto nextPanel = GameObject::Instantiate("next");
 	auto staticBlock = GameObject::Instantiate("block", "block", nextPanel,
@@ -70,6 +68,15 @@ void Scene::remove(GameObject* go) {
 
 void Scene::update() {
 	for (auto gameObject : gameObjects) gameObject->internalUpdate();
+
+	// erase remove idiom
+	gameObjects.erase( remove_if(gameObjects.begin(), gameObjects.end(),
+		[&](auto item) { if (item->isRequestingDestruction() == false) return false;
+				GameObject::Remove(item);
+				delete item;				
+				return true;
+		} ),
+		gameObjects.cend());
 }
 
 void Scene::draw() {

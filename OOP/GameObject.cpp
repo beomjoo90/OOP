@@ -30,19 +30,14 @@ void GameObject::Remove(GameObject* obj)
 
 	try {
 		auto& entry = objects[obj->name]; // NOTE: entry should not be copied from map.
-
-		
-		//auto result = find_if(entry.cbegin(), entry.cend(), [&](auto item) { return item->absolutePath == obj->absolutePath; });
-		//if (result == entry.cend()) return;
-		auto result = find(entry.cbegin(), entry.cend(), obj);
-		if (result == entry.cend()) return;		
-		
+		auto result = find_if(entry.cbegin(), entry.cend(), [&](auto item) { return item->absolutePath == obj->absolutePath; });
+		if (result == entry.cend()) return;
 		entry.erase(result);
-		
 	}
 	catch (int exception)
 	{
 		exception = 0;
+		return;
 	}
 }
 
@@ -76,13 +71,6 @@ void GameObject::internalStart() {
 void GameObject::internalUpdate() {
 	for (auto component : components) component->update();
 	for (auto child : children) child->internalUpdate();
-	
-	children.erase(remove_if(children.begin(), children.end(), [&](auto item) {
-		if (item->isRequestingDestruction() == false) return false;
-		GameObject::Remove(item);
-		delete item;
-		return true;
-	}), children.end());
 }
 
 
@@ -107,18 +95,10 @@ GameObject* GameObject::Instantiate(const string& name, const string& tag, GameO
 	return gameObject;
 }
 
-void GameObject::Destroy(GameObject* obj)
-{
-	if (obj == nullptr) return;
-
-	obj->setDestruction();
-}
-
 GameObject::GameObject(const string& name, 
 	const string& tag,
 	GameObject* parent)
-	: name(name), tag(tag), parent(parent), 
-	requestDestruction(false),
+	: name(name), tag(tag), parent(parent),
 	hideFlag(false), 
 	transform(nullptr),
 	absolutePath( parent == nullptr ? "/" + name : parent->absolutePath + "/" + name),

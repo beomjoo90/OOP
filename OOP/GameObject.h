@@ -21,8 +21,6 @@ class GameObject
 	string		tag;
 	bool		hideFlag;
 
-	bool		requestDestruction;
-
 	GameObject(const string& name, const string& tag,
 		GameObject* parent);
 
@@ -51,11 +49,6 @@ protected:
 		const string& shape = "",
 		const Position& size = Position{1, 1}
 	);	
-
-
-	void setDestruction() { this->requestDestruction = true;  }
-
-	bool isRequestingDestruction() const { return this->requestDestruction;  }
 	
 public:
 	
@@ -123,7 +116,6 @@ public:
 
 	static void Remove(GameObject* obj);
 
-	static void Destroy(GameObject* obj);
 	
 };
 

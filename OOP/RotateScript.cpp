@@ -38,7 +38,4 @@ void RotateScript::rotate() {
 
 void RotateScript::update() {
 	if (getInputManager().GetKeyDown(VK_UP)) rotate();
-	if (getInputManager().GetKeyDown(VK_SPACE)) {
-		GameObject::Destroy(gameObject);
-	}
 }
